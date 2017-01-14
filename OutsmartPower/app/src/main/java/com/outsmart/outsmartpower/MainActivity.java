@@ -26,6 +26,9 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        //Start Server
+        UDPServer.getInstance().execute();
     }
 
     @Override
