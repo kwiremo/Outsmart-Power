@@ -1,6 +1,7 @@
 package com.outsmart.outsmartpower;
 
 import android.os.AsyncTask;
+
 import android.util.Log;
 import android.widget.Toast;
 
@@ -30,6 +31,7 @@ public class UDPServer extends AsyncTask<Object, Object, Object>{
 
     //Instance of this singleton class
     private static UDPServer ourInstance = new UDPServer();
+
     public static UDPServer getInstance() {
         return ourInstance;
     }
@@ -129,5 +131,6 @@ public class UDPServer extends AsyncTask<Object, Object, Object>{
     private void startServer()
     {
         serverRunning = false;
+
     }
 }

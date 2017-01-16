@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         SmartOutlet Home = new SmartOutlet();
         //Start Server
         UDPServer.getInstance().execute(Home);
+
     }
 
     @Override
