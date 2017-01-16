@@ -1,6 +1,7 @@
 package com.outsmart.outsmartpower;
 
 import android.os.Bundle;
+import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -8,6 +9,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.outsmart.outsmartpower.Support.BootlLoader;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,8 +30,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //Bootloader has to run first.
+        BootlLoader bootlLoader = new BootlLoader(this);
+
+        //Creating an outsmart oubject: This will later be moved to a setup function.
+        SmartOutlet Home = new SmartOutlet();
         //Start Server
-        UDPServer.getInstance().execute();
+        UDPServer.getInstance().execute(Home);
     }
 
     @Override

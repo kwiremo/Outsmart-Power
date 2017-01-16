@@ -25,4 +25,19 @@ package com.outsmart.outsmartpower;
  */
 
 public class SmartOutlet {
+
+    private String ipAddress;
+
+    public void setRemoteIPAddress(String remoteIPAddress)
+    {
+        if(remoteIPAddress == null)
+            return;
+
+        REMOTE_IP_ADDRESS = remoteIPAddress;
+    }
+
+    public void getRemoteIPAddress()
+    {
+        if()
+    }
 }
