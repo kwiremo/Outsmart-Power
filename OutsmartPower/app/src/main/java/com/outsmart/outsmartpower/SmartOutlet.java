@@ -45,7 +45,7 @@ public class SmartOutlet {
     private DatabaseOperations database; //The database associated with this smart outlet
 
     //Constructor for the SmartOutlet Class
-    public SmartOutlet(String initialPassword, String initialSsid) {
+    public SmartOutlet( String initialSsid, String initialPassword, String nickname) {
 
         //Set the initial ssid and password of this Smart outlet
         setSsid(initialSsid);
@@ -99,14 +99,11 @@ public class SmartOutlet {
         this.active = active;
     }
 
-    public void setRemoteIPAddress(String remoteIPAddress) {
-        if (remoteIPAddress == null)
-            return;
-
-        //Constants.REMOTE_IP_ADDRESS = remoteIPAddress;
+    public String getIpAddress() {
+        return ipAddress;
     }
 
-    public void getRemoteIPAddress() {
-
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }

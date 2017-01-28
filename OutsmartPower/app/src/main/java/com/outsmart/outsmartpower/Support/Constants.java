@@ -24,8 +24,9 @@ public class Constants {
     //RECORD table COLUMNS
     public static final String RECORD_TABLE_NAME = "record_table_name";
     public static final String RECORD_ID = "record_id";
-    public static final String DATE = "d";
-    public static final String TIME = "t";
+    //public static final String DATE = "d";
+    //public static final String TIME = "time";
+    public static final String SECONDS = "t";
     public static final String CURRENT_1 = "c1";
     public static final String CURRENT_2 = "c2";
     public static final String CURRENT_3 = "c3";

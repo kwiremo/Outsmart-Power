@@ -5,5 +5,5 @@ package com.outsmart.outsmartpower;
  */
 
 public enum TIME_FORMAT {
-    monthFirst, dayFirst
+    military, standard
 }
