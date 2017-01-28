@@ -35,14 +35,14 @@ public class MainActivity extends AppCompatActivity
     //This line allows us to use the Navigation Drawer
     implements NavigationView.OnNavigationItemSelectedListener {
 
-
-
     SmartOutlet activeSmartoutlet;
     DatabaseOperations Db;
 
     //This method is called when the app is first started. It sets up everything the application
     //needs in order to run.
 
+    //This method is called when the app is first started. It sets up everything the application
+    //needs in order to run.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
