@@ -4,13 +4,13 @@
     <group android:checkableBehavior="single">
         <!-- This is the clickable item which takes the user to their list of Smart Outlets-->
         <item
-            android:id="@+id/nav_gallery"
+            android:id="@+id/nav_smart_outlet_list"
             android:icon="@drawable/ic_menu_gallery"
             android:title="@string/list_smart_outlets_nave_bar_title" />
 
         <!-- This is the clickable item which takes the user to the setup page -->
         <item
-            android:id="@+id/nav_camera"
+            android:id="@+id/nav_setup"
             android:icon="@drawable/ic_menu_camera"
             android:title="@string/setup_nav_bar_title" />
 
