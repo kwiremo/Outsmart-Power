@@ -51,6 +51,16 @@ public class Constants {
     public static final String TIME_FORMAT = "time_format";
     public static final String UNIT_PREFERENCE = "unit_preference";
 
+
+    //DATE MANAGER Constants.
+    public static final int MONTH_DAYS = 30;
+    public static final int WEEK_DAYS = 7;
+    public static final int DAY_SECONDS = 86400;
+
+
+    //PERMISSIONS
+    public static final int REQUEST_ID_MULTIPLE_PERMISSIONS = 1;
+
     private Constants() {
         REMOTE_IP_ADDRESS = "192.168.4.1";
     }

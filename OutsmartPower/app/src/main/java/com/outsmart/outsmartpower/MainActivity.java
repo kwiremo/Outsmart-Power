@@ -1,5 +1,6 @@
 package com.outsmart.outsmartpower;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -11,18 +12,15 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
+import com.outsmart.outsmartpower.managers.SmartOutletManager;
+import com.outsmart.outsmartpower.managers.WIFIManager;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 /*
  *Name: MainActivity Class
@@ -34,9 +32,6 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity
     //This line allows us to use the Navigation Drawer
     implements NavigationView.OnNavigationItemSelectedListener {
-
-    SmartOutlet activeSmartoutlet;
-    DatabaseOperations Db;
 
     //This method is called when the app is first started. It sets up everything the application
     //needs in order to run.
@@ -57,6 +52,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+
         //This is the instance of the Navigation Drawer for the UI
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
@@ -76,11 +72,29 @@ public class MainActivity extends AppCompatActivity
         //Bootloader has to setup everything first.
         BootlLoader bootlLoader = new BootlLoader(this);
 
-        //Get the database instance
+        startActivity(new Intent(this, WIFIManager.class));
+
+        //TODO: Display them to the user.
+        //Access the outsmartList
+        List<OutsmartDeviceInfo> deviceInfos = SmartOutletManager.getInstance().getOutSmartsInfoList();
+
+        //If there is no device info, display the setup layout.
+        if(deviceInfos.size() == 0){
+            //Display the setup page
+            //TOdO: Display the setup page
+        }
+        else
+        {
+            //Display a list of outsmartlist.
+            //TODO: Display a list of smartDevices.
+        }
+
+
+    /*    //Get the database instance
         Db = DatabaseOperations.getInstance();
         OutsmartDeviceDataRecord record = new OutsmartDeviceDataRecord(new DateManager(1485626052),1.1,2.2,3.3,4.4,240.4,222);
         Db.addDataRecord(record);
-        List<OutsmartDeviceDataRecord> records = Db.getAllRecordsAfter(222,DateManager.getTodayMidnightSeconds());
+        List<OutsmartDeviceDataRecord> records = Db.getAllRecordsInRange(222,DateManager.getTodayMidnightSeconds(), DateManager.getNowSeconds());
         double expected = 1.1;
         String result = records.get(0).getRecordTime().getMilitaryTime();
         Log.e("OUTPUT", ""+ expected + " " + result);
@@ -88,8 +102,9 @@ public class MainActivity extends AppCompatActivity
 
         //Start Server
         //UDPServer.getInstance().execute(Home);
+       */
     }
-
+/*
     public void setupSmartoutlet(String initialSsid, String initialPassword, String nickname )
     {
         //Creating an outsmart oubject: This will later be moved to a setup function.
@@ -104,6 +119,7 @@ public class MainActivity extends AppCompatActivity
         //
         Db.addSmartOutletInfo(smartOutlet);
     }
+    */
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -150,6 +166,8 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_smart_outlet_list) {
             // Handle the smart outlet list action
         } else if (id == R.id.nav_setup) {
+            //TODO: Call this function for setup.
+            //setupSmartoutlet("Outsamart", "12345678", "Bedroom");
 
         } /*else if (id == R.id.nav_slideshow) {
 

@@ -21,6 +21,7 @@ public class DateManagerTest {
         System.out.println(date.getStandardTime());
         System.out.println(date.getDate(DATE_FORMAT.dayFirst));
 
+        UDPClient.getInstance().execute("Packet");
        // Log.e("TIME", ;
 
     }

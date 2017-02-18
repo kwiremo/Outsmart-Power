@@ -13,6 +13,7 @@ import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -120,7 +121,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
     }
 
     //Add smart outlet information
-    public void addSmartOutletInfo(SmartOutlet smout)
+    public void addSmartOutletInfo(OutsmartDeviceInfo smout)
     {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -129,11 +130,13 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         cv.put(Constants.DEVICE_SSID, smout.getSsid());
         cv.put(Constants.IP_ADDRESS, smout.getIpAddress());
         cv.put(Constants.DEVICE_PASSWORD, smout.getPassword());
+        cv.put(Constants.OUTSMART_DEVICE_ID, smout.getSmart_Outlet_Device_ID());
 
+        db.insert(Constants.DEVICE_TABLE_NAME, null, cv);
         db.close();
     }
 
-    public ArrayList<OutsmartDeviceDataRecord> getAllRecordsAfter(int smID, int seconds)
+    public ArrayList<OutsmartDeviceDataRecord> getAllRecordsInRange(int smID, int startSeconds, int endSeconds)
     {
         ArrayList<OutsmartDeviceDataRecord> RecordList = new ArrayList<OutsmartDeviceDataRecord>();
 
@@ -145,7 +148,8 @@ public class DatabaseOperations extends SQLiteOpenHelper {
 
         String selectQuery = "SELECT " + Constants.SECONDS + " , " + Constants.CURRENT_1 + " , " + Constants.CURRENT_2 + " , " +
         Constants.CURRENT_3 + " , " +  Constants.CURRENT_4 + " , " + Constants.VOLTAGE + " FROM " + Constants.RECORD_TABLE_NAME +
-                " WHERE " + Constants.OUTSMART_DEVICE_ID + "==" + smID + " AND " + Constants.SECONDS + " >= " + seconds;
+                " WHERE " + Constants.OUTSMART_DEVICE_ID + "==" + smID + " AND " + Constants.SECONDS + " >= " + startSeconds
+                + " AND " + Constants.SECONDS + " <= " + endSeconds;
 
 
         SQLiteDatabase db = this.getWritableDatabase();
@@ -161,6 +165,8 @@ public class DatabaseOperations extends SQLiteOpenHelper {
                 double current_4 = Double.parseDouble(cursor.getString(4));
                 double voltage = Double.parseDouble(cursor.getString(5));
 
+
+
                 OutsmartDeviceDataRecord contact = new OutsmartDeviceDataRecord(recordTime,current_1,current_2,current_3,
                         current_4,voltage,smID);
                 RecordList.add(contact);
@@ -168,5 +174,39 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         }
         // return contact list
         return RecordList;
+    }
+
+    public List<OutsmartDeviceInfo> getSmartOutlerInfo()
+    {
+        String selectQuery = "SELECT " + Constants.DEVICE_NAME + " , " + Constants.DEVICE_SSID + " , " + Constants.IP_ADDRESS + " , " +
+                Constants.DEVICE_PASSWORD + " , " +  Constants.DEVICE_ID + " FROM " + Constants.DEVICE_TABLE_NAME;
+
+        //This is a list of all smartDevices that are saved.
+        ArrayList<OutsmartDeviceInfo> outsmartDeviceInfoList = new ArrayList<>();
+
+        OutsmartDeviceInfo info = null;
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        // looping through all rows and adding to list
+        if (cursor.moveToFirst()) {
+            do {
+                String name = cursor.getString(0);
+                String ssid = cursor.getString(1);
+                String ip_address = cursor.getString(2);
+                String password = cursor.getString(3);
+                int id = cursor.getInt(4);
+                info = new OutsmartDeviceInfo(name,ssid,password,ip_address,id);
+                outsmartDeviceInfoList.add(info);
+            } while (cursor.moveToNext());
+        }
+        // return contact list
+        return outsmartDeviceInfoList;
+    }
+
+    public SettingsRecord getSetSettings(){
+
+        //TODO: Implement this to actually get these data from the database.
+        return new SettingsRecord(1,DATE_FORMAT.dayFirst,TIME_FORMAT.military,UNIT_PREFERENCE.Kwh);
     }
 }

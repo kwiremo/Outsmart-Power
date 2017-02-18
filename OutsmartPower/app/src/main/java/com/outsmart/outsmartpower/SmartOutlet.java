@@ -36,20 +36,16 @@ import java.util.ListIterator;
 
 public class SmartOutlet {
 
-    private List<Plug> plugs; //A list of the plugs associated with this Smart Outlet
-    private String nickname; //The name that the user will see for this outlet
-    private String ssid; //The SSID broadcasted by this Smart Outlet
-    private String password; //The password to connect to this Smart Outlet's broadcasted SSID
-    private String ipAddress; //The most recent IP address for the smart outlet
-    private boolean active; //True means this smart outlet is actively communicating with the android application
+
     private DatabaseOperations database; //The database associated with this smart outlet
+    private OutsmartDeviceInfo smartOutletInfo;
+    private int id;     //There is id in the OutsmartDeviceInfo. HOwever we are also saving it here
+                        //SO that we can retrieve data of this instance with this ID.
 
     //Constructor for the SmartOutlet Class
-    public SmartOutlet( String initialSsid, String initialPassword, String nickname) {
-
-        //Set the initial ssid and password of this Smart outlet
-        setSsid(initialSsid);
-        setPassword(initialPassword);
+    public SmartOutlet( String initialSsid, String initialPassword, String nickname, String ipAddress, int id)  {
+        saveDatabaseInfo(initialSsid,initialPassword,nickname,ipAddress,id);
+        this.id = id;
     }
 
     //Adds power profile entry to the data base associated with this Smart Outlet
@@ -59,51 +55,34 @@ public class SmartOutlet {
         return false;
     }
 
-    //Getter for the ssid field
-    public String getSsid() {
-        return ssid;
+    private void saveDatabaseInfo(String initialSsid, String initialPassword, String nickname, String ipAddress, int id)
+    {
+        smartOutletInfo = new OutsmartDeviceInfo(nickname,initialSsid,initialPassword,ipAddress,id);
+        database.addSmartOutletInfo(smartOutletInfo);
     }
 
-    //Setter for the ssid field
-    public void setSsid(String ssid) {
-        this.ssid = ssid;
+    private OutsmartDeviceInfo getDatabaseInfo()
+    {
+        return smartOutletInfo;
+    }
+
+    //Getter for the ssid field
+    public String getSsid() {
+        return smartOutletInfo.getSsid();
     }
 
     //Getter for the password field
     public String getPassword() {
-        return password;
-    }
-
-    //Setter for the password field
-    public void setPassword(String password) {
-        this.password = password;
+        return smartOutletInfo.getPassword();
     }
 
     //Getter for the nickname field
     public String getNickname() {
-        return nickname;
+        return smartOutletInfo.getSsid();
     }
 
-    //Setter for the nickname field
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    //Getter for the active field
-    public boolean isActive() {
-        return active;
-    }
-
-    //Setter for the active field
-    public void setActive(boolean active) {
-        this.active = active;
-    }
 
     public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
+        return smartOutletInfo.getIpAddress();
     }
 }

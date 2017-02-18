@@ -16,6 +16,7 @@ public class ParentActivity {
     private ParentActivity() {
     }
 
+
     //Get the activity parent
     public static Activity getParentActivity() {
         return mainActivity;

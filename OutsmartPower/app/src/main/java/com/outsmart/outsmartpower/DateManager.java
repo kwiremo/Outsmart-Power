@@ -1,5 +1,7 @@
 package com.outsmart.outsmartpower;
 
+import com.outsmart.outsmartpower.Support.Constants;
+
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -88,7 +90,7 @@ public class DateManager extends Timestamp{
      */
     public static int getTodayMidnightSeconds(){
         //Modulus 86400 is getting seconds past to midnight today.
-        int midnightSeconds = getNowSeconds() - (getNowSeconds()%86400);
+        int midnightSeconds = getNowSeconds() - (getNowSeconds()% Constants.DAY_SECONDS);
 
         //Add 6 hours to make it 12:00 Am
         return (midnightSeconds + (6*3600));
@@ -100,6 +102,8 @@ public class DateManager extends Timestamp{
      * substract 7 days' seconds.
      */
     public static int getThiWeekSeconds(){
-        return getTodayMidnightSeconds() - (7 * 86400);
+        return getTodayMidnightSeconds() - (Constants.WEEK_DAYS * Constants.DAY_SECONDS);
     }
+
+    public static int getThirtDays() {return getTodayMidnightSeconds() - (Constants.MONTH_DAYS*Constants.DAY_SECONDS);}
 }

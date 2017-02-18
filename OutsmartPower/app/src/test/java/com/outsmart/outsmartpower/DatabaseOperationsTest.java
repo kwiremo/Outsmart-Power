@@ -15,7 +15,7 @@ public class DatabaseOperationsTest {
         DatabaseOperations Db = DatabaseOperations.getInstance();
         OutsmartDeviceDataRecord record = new OutsmartDeviceDataRecord(new DateManager(1485626052),1.1,2.2,3.3,4.4,240.4,222);
         Db.addDataRecord(record);
-        List<OutsmartDeviceDataRecord> records = Db.getAllRecordsAfter(222,DateManager.getTodayMidnightSeconds());
+        List<OutsmartDeviceDataRecord> records = Db.getAllRecordsInRange(222,DateManager.getTodayMidnightSeconds());
         double expected = 1.1;
         double result = records.get(0).getCurrent_1();
         assertEquals(expected,result);
