@@ -5,7 +5,6 @@ import android.app.Activity;
 import com.outsmart.outsmartpower.managers.SettingsManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.managers.UIManager;
-import com.outsmart.outsmartpower.managers.WIFIManager;
 
 import java.util.Observable;
 
@@ -20,7 +19,6 @@ public class BootlLoader extends Observable{
         ParentActivity.setParentActivity(parentActivity);
         addObserver(SettingsManager.getInstance()); //Add the Settings Manager observer.
         addObserver(SmartOutletManager.getInstance());  // Add the SmartOutletManager observer.
-        addObserver(WIFIManager.getInstance()); //Add wifi manager instance to the observers.
         //Set changed
         setChanged();
         //Notify observers that there is a change.

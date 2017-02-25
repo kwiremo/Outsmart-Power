@@ -1,9 +1,10 @@
 package com.outsmart.outsmartpower;
-
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -11,17 +12,15 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
 import com.outsmart.outsmartpower.Support.BootlLoader;
-import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
-import com.outsmart.outsmartpower.managers.WIFIManager;
+import com.outsmart.outsmartpower.network.WifiListFragment;
+import com.outsmart.outsmartpower.network.outletListFragment;
+import com.outsmart.outsmartpower.ui.SelectWIFIDialog;
 
 import java.util.List;
-
 /*
  *Name: MainActivity Class
  *
@@ -31,7 +30,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity
     //This line allows us to use the Navigation Drawer
-    implements NavigationView.OnNavigationItemSelectedListener {
+    implements NavigationView.OnNavigationItemSelectedListener{
 
     //This method is called when the app is first started. It sets up everything the application
     //needs in order to run.
@@ -68,11 +67,8 @@ public class MainActivity extends AppCompatActivity
         //This sets the listener for navigation drawer selections to the main activity so that we
         //can handle selections of the navigation options
         navigationView.setNavigationItemSelectedListener(this);
-
         //Bootloader has to setup everything first.
         BootlLoader bootlLoader = new BootlLoader(this);
-
-        startActivity(new Intent(this, WIFIManager.class));
 
         //TODO: Display them to the user.
         //Access the outsmartList
@@ -164,10 +160,19 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_smart_outlet_list) {
-            // Handle the smart outlet list action
+
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+            ListFragment fragment = new WifiListFragment();
+            fragmentManager.popBackStack();
+            fragmentTransaction.replace(R.id.wifiListContainer,fragment);
+            fragmentTransaction.commit();
+
+
         } else if (id == R.id.nav_setup) {
-            //TODO: Call this function for setup.
-            //setupSmartoutlet("Outsamart", "12345678", "Bedroom");
+            SelectWIFIDialog dialog = new SelectWIFIDialog();
+            dialog.show(getFragmentManager(),"TAG");
 
         } /*else if (id == R.id.nav_slideshow) {
 
@@ -184,4 +189,6 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+
 }

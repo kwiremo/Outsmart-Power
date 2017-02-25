@@ -1,7 +1,6 @@
-package com.outsmart.outsmartpower.managers;
+package com.outsmart.outsmartpower.network;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,50 +8,57 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.outsmart.outsmartpower.Support.ParentActivity;
+import com.outsmart.outsmartpower.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
+
 import static android.content.ContentValues.TAG;
 import static com.outsmart.outsmartpower.Support.Constants.REQUEST_ID_MULTIPLE_PERMISSIONS;
 
 /**
- * Created by Rene Moise on 2/18/2017.
+ * Created by Rene Moise on 2/22/2017.
  */
-public class WIFIManager extends Activity implements Observer {
-    private static WIFIManager ourInstance = new WIFIManager();
 
-    public static WIFIManager getInstance() {
-        return ourInstance;
-    }
-    //WifiManager API to manage all aspects of WIFI Connectivity.
-    private WifiManager wifiManager;
-
+public class WifiListFragment extends android.support.v4.app.ListFragment {
+    ArrayAdapter wifiListAdapter;   //Responsible to display an array list of wifi on the screen.
+    //ListView Lv;    //The list view on the screen that will display a list of wifi.
+    private WifiManager wifiManager;    //wifimanager needed for the wifi_service class.
     //Create an instance of wifiscanreceiver to start listening for a wifi scan if requested.
     private WifiScanReceiver wifiScanReceiver;
+    TextView Tv;    //Looking available wifi when scanning and displays WIFI list when found.
 
-    //Get the parent main activity.
-    Activity parentActivity ;
+    ArrayList<String> availableWifis;
+    ArrayList<String> availableOutsmartWifi;
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        //parentActivity = ParentActivity.getParentActivity();
+        wifiManager = (WifiManager) getActivity().getSystemService(Context.WIFI_SERVICE);
 
-
-    private WIFIManager() {
     }
 
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onStart() {
+        super.onStart();
+        Tv = (TextView) getView().findViewById(R.id.wifiListTitleTV);
+        Tv.setText("Scanning...");
 
         //Check to see if we have all wifi permissions to scan device's wifi.
         if(getPermissionsNeededToScan().size() == 0)
@@ -62,15 +68,23 @@ public class WIFIManager extends Activity implements Observer {
         else{
             requestPermissionsFromTheUser(getPermissionsNeededToScan());
         }
+
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+        View view = inflater.inflate(R.layout.wifi_list, container,false);
+        return view;
     }
 
     private void startScanning() {
-        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE); //get a wifi_service
+        wifiManager = (WifiManager) getActivity().getSystemService(Context.WIFI_SERVICE); //get a wifi_service
         wifiScanReceiver = new WifiScanReceiver();      //Create and save a reference to the broadcastreceiver.
 
         //In order to scan a list of wireless networks, you also need to register your
         // BroadcastReceiver. It is given a broadcastreceiver and an action on which it will be called.
-        registerReceiver(wifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        getActivity().registerReceiver(wifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 
         //before scanning, ensure that wifi is enabled.
         if(!wifiManager.isWifiEnabled())
@@ -80,13 +94,8 @@ public class WIFIManager extends Activity implements Observer {
         wifiManager.startScan();
     }
 
-    @Override
-    public void update(Observable observable, Object o) {
-
-    }
-
     private void requestPermissionsFromTheUser(List<String> listPermissionsNeeded) {
-        ActivityCompat.requestPermissions(this,
+        ActivityCompat.requestPermissions(getActivity(),
                 listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]),REQUEST_ID_MULTIPLE_PERMISSIONS);
     }
 
@@ -95,13 +104,29 @@ public class WIFIManager extends Activity implements Observer {
     {
         @Override
         public void onReceive(Context context, Intent intent) {
+            availableWifis = new ArrayList<>();
+            List<ScanResult> scannedResults = wifiManager.getScanResults();
 
+            for(ScanResult scanResult: scannedResults){
+                if(!(availableWifis.contains(scanResult.SSID)))
+                    availableWifis.add(scanResult.SSID);
+            }
+
+            if(!scannedResults.isEmpty()) {
+                wifiListAdapter = new ArrayAdapter(getActivity(),
+                        android.R.layout.simple_list_item_1, availableWifis);
+                setListAdapter(wifiListAdapter);
+                //Lv.setAdapter(wifiListAdapter);
+                Tv.setText("AVAILABLE WIFI");
+            }
+            else
+                Tv.setText("No Available Wifi");
         }
     }
 
     private List<String> getPermissionsNeededToScan()
     {
-        int permissionAcessCoarseLocation = ContextCompat.checkSelfPermission(this,
+        int permissionAcessCoarseLocation = ContextCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.ACCESS_COARSE_LOCATION);
 
         List<String> listPermissionsNeeded = new ArrayList<>();
@@ -136,7 +161,7 @@ public class WIFIManager extends Activity implements Observer {
                         //permission is denied (this is the first time, when "never ask again" is not checked) so ask again explaining the usage of permission
 //                        // shouldShowRequestPermissionRationale will return true
                         //show the dialog or snackbar saying its necessary and try again otherwise proceed with setup.
-                        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                        if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
                             showDialogOK("COARSE_Location Services Permission required for this app",
                                     new DialogInterface.OnClickListener() {
                                         @Override
@@ -155,7 +180,7 @@ public class WIFIManager extends Activity implements Observer {
                         //permission is denied (and never ask again is  checked)
                         //shouldShowRequestPermissionRationale will return false
                         else {
-                            Toast.makeText(this, "Go to settings and enable permissions", Toast.LENGTH_LONG)
+                            Toast.makeText(getActivity(), "Go to settings and enable permissions", Toast.LENGTH_LONG)
                                     .show();
                             //                            //proceed with logic by disabling the related features or quit the app.
                         }
@@ -166,13 +191,17 @@ public class WIFIManager extends Activity implements Observer {
     }
 
     private void showDialogOK(String message, DialogInterface.OnClickListener okListener) {
-        new AlertDialog.Builder(this)
+        new AlertDialog.Builder(getActivity())
                 .setMessage(message)
                 .setPositiveButton("OK", okListener)
                 .setNegativeButton("Cancel", okListener)
                 .create()
                 .show();
     }
+
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id) {
+        Log.e(TAG, availableWifis.get(position));
+
+    }
 }
-
-

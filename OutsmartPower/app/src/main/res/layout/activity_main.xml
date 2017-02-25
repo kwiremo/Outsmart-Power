@@ -22,4 +22,9 @@
         app:headerLayout="@layout/nav_header_main"
         app:menu="@menu/activity_main_drawer" />
 
+
+    <!--<fragment
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:name = "com.outsmart.outsmartpower.network.WifiListFragment"/> -->
 </android.support.v4.widget.DrawerLayout>

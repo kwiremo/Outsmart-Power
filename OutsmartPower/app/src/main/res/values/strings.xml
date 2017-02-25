@@ -6,4 +6,7 @@
     <string name="action_settings">Settings</string>
     <string name="setup_nav_bar_title">Setup New</string>
     <string name="list_smart_outlets_nave_bar_title">Your Outlets</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
