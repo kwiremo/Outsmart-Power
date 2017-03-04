@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity
         //setupSmartoutlet("","","");
 
         //Start Server
-        //UDPServer.getInstance().execute(Home);
+        //UDPManager.getInstance().execute(Home);
        */
     }
 /*

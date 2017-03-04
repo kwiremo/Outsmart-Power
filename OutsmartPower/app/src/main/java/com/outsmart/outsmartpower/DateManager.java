@@ -8,7 +8,11 @@ import java.util.Calendar;
 import java.util.Locale;
 
 /**
- * Created by Rene Moise on 1/21/2017.
+ * Created by Rene Moise Kwibuka
+ *
+ * Name: DateManager Class
+ *
+ * Description: TODO describe this class
  */
 
 /*
