@@ -24,6 +24,7 @@ public class BootlLoader extends Observable{
         //Notify observers that there is a change.
         notifyObservers();
         //Display to the user that the phone app started successfully.
+        //Start server.
         UIManager.getInstance().disPlayMessage("Up and Running", ParentActivity.getParentActivity());
 
     }

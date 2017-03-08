@@ -1,5 +1,7 @@
 package com.outsmart.outsmartpower;
 
+import com.outsmart.outsmartpower.network.records.OutsmartDeviceDataRecord;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 

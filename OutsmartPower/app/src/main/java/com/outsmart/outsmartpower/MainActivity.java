@@ -161,14 +161,13 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_smart_outlet_list) {
 
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            android.app.FragmentManager fragmentManager = getFragmentManager();
+            android.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            android.app.ListFragment fragment = new WifiListFragment();
+            //ListFragment fragment =
 
-            ListFragment fragment = new WifiListFragment();
-            fragmentManager.popBackStack();
             fragmentTransaction.replace(R.id.wifiListContainer,fragment);
             fragmentTransaction.commit();
-
 
         } else if (id == R.id.nav_setup) {
             SelectWIFIDialog dialog = new SelectWIFIDialog();

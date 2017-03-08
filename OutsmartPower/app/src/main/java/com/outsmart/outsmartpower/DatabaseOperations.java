@@ -5,16 +5,13 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.drm.DrmStore;
-import android.media.audiofx.BassBoost;
-import android.util.Log;
 
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
+import com.outsmart.outsmartpower.network.records.OutsmartDeviceDataRecord;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by christian.wagner on 1/16/17.

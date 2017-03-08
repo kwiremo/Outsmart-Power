@@ -1,7 +1,6 @@
 package com.outsmart.outsmartpower.managers;
 
 import com.outsmart.outsmartpower.DatabaseOperations;
-import com.outsmart.outsmartpower.OutsmartDeviceDataRecord;
 import com.outsmart.outsmartpower.OutsmartDeviceInfo;
 import com.outsmart.outsmartpower.Support.BootlLoader;
 
