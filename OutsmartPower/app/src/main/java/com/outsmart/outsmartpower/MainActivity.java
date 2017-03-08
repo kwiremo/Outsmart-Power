@@ -15,7 +15,9 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import com.outsmart.outsmartpower.Support.BootlLoader;
+import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
+import com.outsmart.outsmartpower.managers.UDPManager;
 import com.outsmart.outsmartpower.network.WifiListFragment;
 import com.outsmart.outsmartpower.network.outletListFragment;
 import com.outsmart.outsmartpower.ui.SelectWIFIDialog;
@@ -41,13 +43,12 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        //This will be the 'add' button on the main page of the UI
+        //TODO This will be the 'add' button on the main page of the UI
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                UDPManager.getInstance().sendPacket("Hello", Constants.REMOTE_IP_ADDRESS);
             }
         });
 

@@ -16,7 +16,7 @@ public class Constants {
     public static int BUFFER_SIZE = 4096;
     public static int SERVER_PORT = 4000;
     public static int SERVER_SLEEP_TIME = 1; //server sleep time in milliseconds.
-    public String REMOTE_IP_ADDRESS = "192.168.4.1";
+    public static String REMOTE_IP_ADDRESS = "192.168.4.1";
     public static int REMOTE_PORT = 2390;
     public static final String DATABASE_NAME = "outsmart";  //database name
 

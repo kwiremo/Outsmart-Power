@@ -35,11 +35,13 @@ public class UDPClient implements Observer{
     //Method that calls the UDP Manager's send packet method
     public void sendUDOClient(){
         //TODO implement
-        UDPManager.getInstance().sendPacket();
+        //UDPManager.getInstance().sendPacket();
     }
     //Update method to respond to notifications from the UDPManager that a packet came in
     @Override
     public void update(Observable o, Object arg) {
+        if(o.getClass().equals(UDPManager.class)){
 
+        }
     }
 }

@@ -4,12 +4,17 @@ import android.app.Activity;
 
 import com.outsmart.outsmartpower.managers.SettingsManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
+import com.outsmart.outsmartpower.managers.UDPManager;
 import com.outsmart.outsmartpower.managers.UIManager;
 
 import java.util.Observable;
 
 /**
  * Created by Rene Moise on 1/16/2017.
+ *
+ * Name: BootLoader Class
+ *
+ * Description: Class to start the phone application, and ensure everything is set up.
  */
 
 public class BootlLoader extends Observable{
@@ -19,6 +24,7 @@ public class BootlLoader extends Observable{
         ParentActivity.setParentActivity(parentActivity);
         addObserver(SettingsManager.getInstance()); //Add the Settings Manager observer.
         addObserver(SmartOutletManager.getInstance());  // Add the SmartOutletManager observer.
+        addObserver(UDPManager.getInstance()); //Add the UDPManager as an observer
         //Set changed
         setChanged();
         //Notify observers that there is a change.
