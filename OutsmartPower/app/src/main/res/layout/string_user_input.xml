@@ -4,22 +4,28 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:text="Enter Password"
+        android:id="@+id/userInputTV"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/password_tv" />
+        android:text="Enter Nick Name" />
 
     <EditText
-        android:id="@+id/password_et"
+        android:id="@+id/userInputET"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:hint="password"
-        android:inputType="textPassword" />
+        android:hint="Living Room"
+        android:inputType="textPersonName" />
 
     <Button
-        android:id="@+id/password_btn"
+        android:id="@+id/saveInputBTN"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Save" />
+
+    <Button
+        android:id="@+id/cancelDialogBTN"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel" />
 </LinearLayout>

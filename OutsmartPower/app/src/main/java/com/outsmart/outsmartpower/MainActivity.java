@@ -1,10 +1,16 @@
 package com.outsmart.outsmartpower;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.ListFragment;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -16,13 +22,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
+import com.outsmart.outsmartpower.managers.ConnectionManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.managers.UDPManager;
 import com.outsmart.outsmartpower.network.WifiListFragment;
-import com.outsmart.outsmartpower.network.outletListFragment;
-import com.outsmart.outsmartpower.ui.SelectWIFIDialog;
+import com.outsmart.outsmartpower.network.records.CredentialRecord;
+import com.outsmart.outsmartpower.ui.GetNickNameDialog;
 
 import java.util.List;
+
+import static android.content.ContentValues.TAG;
 /*
  *Name: MainActivity Class
  *
@@ -30,12 +39,29 @@ import java.util.List;
  * well as handling events that occur throughout the life of the application.
  */
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends AppCompatActivity implements WifiListFragment.onReceivedPreferredWifis,
     //This line allows us to use the Navigation Drawer
-    implements NavigationView.OnNavigationItemSelectedListener{
+        NavigationView.OnNavigationItemSelectedListener, UDPServer.reportOutsmartCred, GetNickNameDialog.onInputButtonClicked{
 
     //This method is called when the app is first started. It sets up everything the application
     //needs in order to run.
+
+    /**
+     * This variable is a broadcast receiver. It receives the connection status when wifi switches.
+     * It is initialized when the list of wifis list is received. At this point it is ready
+     * for a new connection. Once the onReceive is received
+     */
+    ConnectedReceived received;
+
+    //These fields are used to setup a new outsmart device.
+    String nickname;
+    String ssid;
+    String password;
+    String ipAddress;
+    int smart_Outlet_Device_ID;
+    String homeWifiName;
+    String homeWifiPassword;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,21 +96,6 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
         //Bootloader has to setup everything first.
         BootlLoader bootlLoader = new BootlLoader(this);
-
-        //TODO: Display them to the user.
-        //Access the outsmartList
-        List<OutsmartDeviceInfo> deviceInfos = SmartOutletManager.getInstance().getOutSmartsInfoList();
-
-        //If there is no device info, display the setup layout.
-        if(deviceInfos.size() == 0){
-            //Display the setup page
-            //TOdO: Display the setup page
-        }
-        else
-        {
-            //Display a list of outsmartlist.
-            //TODO: Display a list of smartDevices.
-        }
 
 
     /*    //Get the database instance
@@ -162,18 +173,13 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_smart_outlet_list) {
 
+        } else if (id == R.id.nav_setup) {
             android.app.FragmentManager fragmentManager = getFragmentManager();
             android.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             android.app.ListFragment fragment = new WifiListFragment();
-            //ListFragment fragment =
-
-            fragmentTransaction.replace(R.id.wifiListContainer,fragment);
+            fragmentTransaction.replace(R.id.wifiListFragmentContainer,fragment);
+            fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
-
-        } else if (id == R.id.nav_setup) {
-            SelectWIFIDialog dialog = new SelectWIFIDialog();
-            dialog.show(getFragmentManager(),"TAG");
-
         } /*else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {
@@ -191,4 +197,94 @@ public class MainActivity extends AppCompatActivity
     }
 
 
+    @Override
+    public void receivePreferredWifis(String homeWifiName, String outsmartWifiName,
+                                      String homeWifiPassword, String outSmartWifiPassword,
+                                      List<ScanResult> scannedResults, WifiManager wifiManager) {
+
+        //Set the first arguments for a new device.
+        ssid = outsmartWifiName;
+        password = outSmartWifiPassword;
+
+        //Create a receiver for the connected action.
+        received = new ConnectedReceived();
+
+        this.homeWifiName = homeWifiName;
+        this.homeWifiPassword = homeWifiPassword;
+
+        //Get the connectivity manager.
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        //Create a filter for to connectivity action.
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(cm.CONNECTIVITY_ACTION);
+
+        //Register the receiver.
+        registerReceiver(received,intentFilter);
+
+        ConnectionManager.getInstance().connectToWifi(outsmartWifiName, outSmartWifiPassword,
+                scannedResults, wifiManager);
+    }
+
+    @Override
+    public void onOutsmartCredReceived(int id, String ip) {
+        smart_Outlet_Device_ID = id;
+        ipAddress = ip;
+
+        /**
+         *  Now that we are have id, and ip from the UDP Server,
+         *  And that we have Outsmart Name and password from the WIFIListFragment
+         *  We are going to request a nickname for this outsmart.
+         *  The input from the user will be received rom the onFinishedEnteringInput.
+         */
+
+        GetNickNameDialog dialog = new GetNickNameDialog();
+        dialog.show(getFragmentManager(),null);
+    }
+
+    @Override
+    public void onFinishedEditDialog(String userInput) {
+        if(password != null || password != ""){
+            nickname = userInput;
+        }
+        else
+            nickname = ssid;
+        /**
+         * At this point we have everything we need to save a new outsmart device.
+         */
+        OutsmartDeviceInfo outsmartDeviceInfo = new OutsmartDeviceInfo(nickname,ssid,
+                password,ipAddress,smart_Outlet_Device_ID);
+
+        SmartOutletManager.getInstance().saveSmartOutlet(outsmartDeviceInfo);
+    }
+
+    private class ConnectedReceived extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (action.equals(cm.CONNECTIVITY_ACTION)) {
+                NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+
+                if (networkInfo != null && networkInfo.isConnected()) {
+                    // Wifi is connected
+                    WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+                    WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+                    String ssid = wifiInfo.getSSID();
+
+                    if (ssid.contains(Constants.PASWWPRD_KEYWORD)) {    //Used contains rather than equals because the ssid returned has extra quotes that I am not sure why
+                        //they are added. Change it to equals if you can fix it.
+                        Log.e(TAG, " -- Wifi connected --- " + " SSID " + ssid);
+                        CredentialRecord credentialRecord = new CredentialRecord(homeWifiName, homeWifiPassword);
+                        UDPManager.getInstance().sendPacket(credentialRecord.toJSONString(), Constants.REMOTE_IP_ADDRESS);
+
+
+                        getFragmentManager().popBackStack();
+                        unregisterReceiver(received);
+                    }
+
+                }
+            }
+        }
+    }
 }

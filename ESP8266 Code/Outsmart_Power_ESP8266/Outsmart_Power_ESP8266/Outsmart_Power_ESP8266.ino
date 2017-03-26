@@ -16,7 +16,7 @@ const char WIFI_AP_PASSWORD[] = "12345678";
 int udpPort = 2390;
 WiFiUDP Udp;
 bool connected = false;
-
+String macID = ""; //This is used as the OutSmart ID.
 
 
 // the setup function runs once when you press reset or power the board
@@ -87,7 +87,9 @@ void loop() {
 
 			//Build object tree in memory
 			JsonObject& root = jsonBufferSend.createObject();
-			root["IPAD"] = WiFi.localIP().toString();
+			root["type"] = "CRED";
+			root["ip"] = WiFi.localIP().toString();
+			root["id"] = macID;
 			char messageToSend[50];
 			root.printTo(messageToSend, sizeof(messageToSend));
 			String toSendData = messageToSend;
@@ -98,7 +100,7 @@ void loop() {
 	}
 	char remoteIP[15] = "192.168.4.2";
 
-	sendUDPPacket("Hello", remoteIP, 4000);
+	///sendUDPPacket("Hello", remoteIP, 4000);
 	Serial.println(".");
 	delay(1000);
 }
@@ -111,7 +113,7 @@ void setupAPWiFi()
 	// last two bytes of the MAC (HEX'd) to "Thing-":
 	uint8_t mac[WL_MAC_ADDR_LENGTH];
 	WiFi.softAPmacAddress(mac);
-	String macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
+	macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
 		String(mac[WL_MAC_ADDR_LENGTH - 1], HEX);
 	macID.toUpperCase();
 	String AP_NameString = "OutSmart " + macID;

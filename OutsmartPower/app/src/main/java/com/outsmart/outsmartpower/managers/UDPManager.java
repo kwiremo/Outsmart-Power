@@ -10,6 +10,7 @@ import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.UDPClient;
+import com.outsmart.outsmartpower.UDPServer;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -88,6 +89,8 @@ public class UDPManager extends Observable implements Observer{
         protected void onProgressUpdate(Object... values) {
             if (values[0] != null){
                 String updatePacket = values[0].toString();
+                Toast.makeText(ParentActivity.getParentActivity(), updatePacket,
+                        Toast.LENGTH_SHORT).show();
                 setChanged();
                 notifyObservers(values[0]);
             };
@@ -101,9 +104,6 @@ public class UDPManager extends Observable implements Observer{
 
     //Class to send UDP packets
     private class sendUDPPacket extends AsyncTask<PacketInformation, Void, Void>{
-
-        String test;
-
         @Override
         protected Void doInBackground(PacketInformation... arg0) {
             PacketInformation pktInfo = arg0[0];
@@ -118,7 +118,6 @@ public class UDPManager extends Observable implements Observer{
 
     //private constructor (singleton)
     private UDPManager() {
-
     }
 
     @Override
@@ -127,6 +126,7 @@ public class UDPManager extends Observable implements Observer{
         if(o.getClass().equals(BootlLoader.class)){
 
             startServer();
+            addObserver(UDPServer.getOurInstance());
 
             //TODO Add UDP client and server as observers to this
         }
@@ -169,7 +169,7 @@ public class UDPManager extends Observable implements Observer{
     {
         serverRunning = true;
         openSockets();
-        new receiveUDPPacket().execute();
+        new receiveUDPPacket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, receiveSocket);
     }
 
     //Method to send packets
@@ -186,7 +186,7 @@ public class UDPManager extends Observable implements Observer{
                     IPAddress,
                     Constants.REMOTE_PORT);
             //Send the frame
-            new sendUDPPacket().doInBackground(new PacketInformation(sendSocket,sendPacket));
+            new sendUDPPacket().execute(new PacketInformation(sendSocket,sendPacket));
         }
         catch(Exception e){
             e.printStackTrace();//TODO implement exception

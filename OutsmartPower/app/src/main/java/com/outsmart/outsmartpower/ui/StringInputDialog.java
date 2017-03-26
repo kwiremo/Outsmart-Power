@@ -12,15 +12,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.outsmart.outsmartpower.R;
-import com.outsmart.outsmartpower.network.WifiListFragment;
-
-import org.w3c.dom.Text;
 
 /**
  * Created by Rene Moise on 2/25/2017.
  */
 
-public class GetPasswordDialog extends DialogFragment {
+public class StringInputDialog extends DialogFragment {
     private TextView passwordTV;
     private EditText passwordET;
     private Button passwordBTN;
@@ -29,7 +26,7 @@ public class GetPasswordDialog extends DialogFragment {
 
     public Context context;
 
-    public GetPasswordDialog(){
+    public StringInputDialog(){
 
     }
 
@@ -51,15 +48,15 @@ public class GetPasswordDialog extends DialogFragment {
         passwordBTN.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                onPasswordButtonClicked fragment = (onPasswordButtonClicked) getTargetFragment();
-                fragment.onFinishedEnteringPassword(passwordET.getText().toString());
+                onInputButtonClicked fragment = (onInputButtonClicked) getTargetFragment();
+                fragment.onFinishedEnteringInput(passwordET.getText().toString());
                 dismiss();
             }
         });
         return rootView;
     }
 
-    public interface onPasswordButtonClicked{
-        void onFinishedEnteringPassword(String password);
+    public interface onInputButtonClicked {
+        void onFinishedEnteringInput(String password);
     }
 }

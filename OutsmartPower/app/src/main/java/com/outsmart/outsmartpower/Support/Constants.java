@@ -44,6 +44,10 @@ public class Constants {
     public static final String IP_ADDRESS = "IP_Address";
     public static final String DEVICE_NAME = "device_name";
 
+    //IP AdDRESS TABLE
+    public static final String IPADDRESS_NAME = "ip_address_table";
+    public static final String IP_ADDRESS_COL = "ip_address_table";
+
     //SETTINGS TABLE COLUMNS
     public static final String SETTINGS_TABLE_NAME = "settings_table_name";
     public static final String COST = "cost_kwh";
@@ -67,4 +71,31 @@ public class Constants {
 
     //PASSWORDS
     public  static final String PASWWPRD_KEYWORD = "OutSmart";
+
+    //PROTOCOL keys
+
+    //RECORD TYPES
+    /**
+     * I have made a simple protocol consisting of 6 types of packets that will be being exchanged and they will sent as json information.
+     * As a part of a protocol, I have also included delimiters that will be used to extract specific information in a given type.
+     * This is a protocol and definition:
+     * Example:
+     1. Credentials: type:CRED,p:12345678, s:Outsmart 288 where p is password and s is ssid.
+     2. Control: type: type:CONT,p:1 where p means toggle plug number the value given. in this case plug 1.
+     3. Power Record: check 11/09/2016 for an example.
+     4. Echo Request: type:REQU, ip:10.30.10.138: Where ip is the ipp address of the sender.
+     5. ip the ip address of the sender.
+     6. ip the ip address of the sender.
+     */
+    public static final String CRED_RECORD = "CRED"; //credential record
+    public static final String CONT_RECORD = "CONT";    //control record
+    public static final String PORE_RECORD = "PORE"; //power record
+    public static final String REQU_RECORD = "REQU";   //echo request record
+    public static final String REPL_RECORD = "REPL";    //reply record
+    public static final String IPAD_RECORD = "IPAD";    //IP address record.
+
+    public static final String TYPE_LABEL = "type";
+
+    public static final String IP_CONTENT = "ip";
+    public static final String ID_CONTENT = "id";
 }

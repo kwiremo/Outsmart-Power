@@ -9,11 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -28,9 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.Support.Constants;
-import com.outsmart.outsmartpower.Support.Utilities;
-import com.outsmart.outsmartpower.network.records.CredentialRecord;
-import com.outsmart.outsmartpower.ui.GetPasswordDialog;
+import com.outsmart.outsmartpower.ui.StringInputDialog;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,9 +36,9 @@ import static com.outsmart.outsmartpower.Support.Constants.REQUEST_ID_MULTIPLE_P
  * Created by Rene Moise on 2/22/2017.
  */
 
-public class WifiListFragment extends android.app.ListFragment implements GetPasswordDialog.onPasswordButtonClicked {
+public class WifiListFragment extends android.app.ListFragment implements StringInputDialog.onInputButtonClicked {
 
-        ArrayAdapter wifiListAdapter;   //Responsible to display an array list of wifi on the screen.
+    ArrayAdapter wifiListAdapter;   //Responsible to display an array list of wifi on the screen.
     //ListView Lv;    //The list view on the screen that will display a list of wifi.
     private WifiManager wifiManager;    //wifimanager needed for the wifi_service class.
     //Create an instance of wifiscanreceiver to start listening for a wifi scan if requested.
@@ -65,6 +59,11 @@ public class WifiListFragment extends android.app.ListFragment implements GetPas
      *     This is true if the user has entered the password for a home wifi.
      */
     boolean hasEnteredHomeWifiPassword = false;
+
+    public interface onReceivedPreferredWifis{
+        void receivePreferredWifis(String homeWifiName, String outsmartWifiName, String homeWifiPassword, String outSmartWifiPassword,
+                                   List<ScanResult> scannedResults, WifiManager wifiManager);
+    }
 
     List<ScanResult> scannedResults;
 
@@ -104,7 +103,7 @@ public class WifiListFragment extends android.app.ListFragment implements GetPas
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.wifi_list, container,false);
+        View view = inflater.inflate(R.layout.layout_list, container,false);
         return view;
     }
 
@@ -134,31 +133,6 @@ public class WifiListFragment extends android.app.ListFragment implements GetPas
     {
         @Override
         public void onReceive(Context context, Intent intent) {
-
-            final String action = intent.getAction();
-
-            ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            if(action.equals(cm.CONNECTIVITY_ACTION)){
-                NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-
-                if (networkInfo != null  && networkInfo.isConnected()) {
-                    // Wifi is connected
-                    //WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-                    WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-                    String ssid = wifiInfo.getSSID();
-
-                    if(ssid.contains(outsmartWifiName)){    //Used contains rather than equals because the ssid returned has extra quotes that I am not sure why
-                                                            //they are added. Change it to equals if you can fix it.
-                        Log.e(TAG, " -- Wifi connected --- " + " SSID " + ssid );
-                        CredentialRecord credentialRecord = new CredentialRecord(homeWifiName,homeWifiPassword);
-                        //UDPManager.getInstance().execute(credentialRecord.toJSONString());
-                        baseActivity.unregisterReceiver(wifiScanReceiver);
-                    }
-
-                }
-            }
-            else
-            {
                 //Creating references to the list of available networks.
                 allAvailableNetworks = new ArrayList<>();
                 availableOutsmartWifi = new ArrayList<>();
@@ -194,13 +168,12 @@ public class WifiListFragment extends android.app.ListFragment implements GetPas
                     Tv.setText("No OutSmart Device Found.");
             }
         }
-    }
 
     //This is a callback to the dialog fragment. Since this class implements the getPassordDialog
     //interface, it has to implement this method. The input entered on the dialog is received here.
 
     @Override
-    public void onFinishedEnteringPassword(String password) {
+    public void onFinishedEnteringInput(String password) {
 
         if(!hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
             outSmartWifiPassword = password;
@@ -215,34 +188,28 @@ public class WifiListFragment extends android.app.ListFragment implements GetPas
         else if(hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
             homeWifiPassword = password;
             hasEnteredHomeWifiPassword = true;
-            ConnectivityManager cm = (ConnectivityManager) baseActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
 
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(cm.CONNECTIVITY_ACTION);
-           baseActivity.registerReceiver(wifiScanReceiver,intentFilter);
-
-            tryConnectingToOutsmart();
+            onReceivedPreferredWifis receivedPreferredWifis = (onReceivedPreferredWifis) getActivity();
+            if(receivedPreferredWifis != null){
+                receivedPreferredWifis.receivePreferredWifis(homeWifiName, outsmartWifiName, outsmartWifiName,
+                        outSmartWifiPassword, scannedResults, wifiManager);
+            }
         }
     }
-
-    private void tryConnectingToOutsmart() {
-        Utilities.getInstance().connectToWifi(outsmartWifiName,outSmartWifiPassword,scannedResults,wifiManager);
-    }
-
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
 
         if(!hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword)
         {
-            GetPasswordDialog dialog = new GetPasswordDialog();
+            StringInputDialog dialog = new StringInputDialog();
             dialog.setTargetFragment(this,1);
             dialog.show(baseActivity.getFragmentManager(),null);
 
             outsmartWifiName = availableOutsmartWifi.get(position);
         }
         else if(hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
-            GetPasswordDialog dialog = new GetPasswordDialog();
+            StringInputDialog dialog = new StringInputDialog();
             dialog.setTargetFragment(this,1);
             dialog.show(baseActivity.getFragmentManager(),null);
 

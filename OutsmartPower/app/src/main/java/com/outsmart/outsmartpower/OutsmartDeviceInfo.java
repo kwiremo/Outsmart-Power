@@ -21,6 +21,11 @@ public class OutsmartDeviceInfo {
     private String ipAddress; //The most recent IP address for the smart outlet
     private int smart_Outlet_Device_ID;
 
+
+    public OutsmartDeviceInfo() {
+
+    }
+
     public void setNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -37,8 +42,8 @@ public class OutsmartDeviceInfo {
         this.ipAddress = ipAddress;
     }
 
-    public void setSmart_Outlet_Device_ID(String smart_Outlet_Device_ID) {
-        smart_Outlet_Device_ID = smart_Outlet_Device_ID;
+    public void setSmart_Outlet_Device_ID(int smart_Outlet_Device_ID) {
+        this.smart_Outlet_Device_ID = smart_Outlet_Device_ID;
     }
 
     public String getNickname() {

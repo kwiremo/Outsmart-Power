@@ -58,4 +58,10 @@ public class SmartOutletManager implements Observer {
             outSmartsInfoList = databaseOperations.getSmartOutlerInfo();
         }
     }
+
+    public void saveSmartOutlet(OutsmartDeviceInfo info){
+        databaseOperations.addSmartOutletInfo(info);
+        outSmartsInfoList.add(info);
+        //TODO: Make sure to update the list of available smart Outlet.
+    }
 }

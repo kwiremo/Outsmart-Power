@@ -49,48 +49,4 @@ public class Utilities {
         }
         return null;
     }
-
-    public void  connectToWifi(String ssid, String password, List<ScanResult> scannedResults, WifiManager wifiManager){
-        WifiConfiguration wifiConfig = new WifiConfiguration();
-        wifiConfig.SSID = String.format("\"%s\"", ssid);
-
-
-        for (ScanResult network : scannedResults)
-        {
-            //check if current connected SSID
-            if (ssid.equals(network.SSID)){
-                //get capabilities of current connection
-                String Capabilities =  network.capabilities;
-                Log.d (TAG, network.SSID + " capabilities : " + Capabilities);
-
-                if (Capabilities.contains("WPA2")) {
-                    wifiConfig.preSharedKey = "\""+ password +"\"";
-                }
-                else if (Capabilities.contains("WPA")) {
-                    wifiConfig.preSharedKey = "\""+ password +"\"";
-                }
-                else if (Capabilities.contains("WEP")) {
-                    wifiConfig.wepKeys[0] = "\"" + password + "\"";
-                    wifiConfig.wepTxKeyIndex = 0;
-                    wifiConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-                    wifiConfig.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
-                }
-                else
-                {
-                    wifiConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-                }
-                break;
-            }
-        }
-
-        List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
-        for( WifiConfiguration i : list ) {
-            if(i.SSID != null && i.SSID.equals("\"" + ssid + "\"")) {
-                wifiManager.disconnect();
-                wifiManager.enableNetwork(i.networkId, true);
-                wifiManager.reconnect();
-                break;
-            }
-        }
-    }
 }

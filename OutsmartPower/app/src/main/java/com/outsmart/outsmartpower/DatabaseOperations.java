@@ -56,6 +56,11 @@ public class DatabaseOperations extends SQLiteOpenHelper {
             Constants.TIME_FORMAT + " INTEGER," +
             Constants.UNIT_PREFERENCE + " INTEGER)";
 
+    //Create IP Address table
+    private String CREATE_IPADDRESS_TABLE = "CREATE TABLE "+ Constants.IPADDRESS_NAME + "(" +
+            Constants.IP_ADDRESS_COL + " CHARACTER(15))";
+
+
     private DatabaseOperations(Context context) {
         super(context, Constants.DATABASE_NAME,null,DATABASE_VERSION );
        // Log.e("DATABASE_OPERATIONS", "Database Created");
@@ -127,7 +132,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         cv.put(Constants.DEVICE_SSID, smout.getSsid());
         cv.put(Constants.IP_ADDRESS, smout.getIpAddress());
         cv.put(Constants.DEVICE_PASSWORD, smout.getPassword());
-        cv.put(Constants.OUTSMART_DEVICE_ID, smout.getSmart_Outlet_Device_ID());
+        cv.put(Constants.DEVICE_ID, smout.getSmart_Outlet_Device_ID());
 
         db.insert(Constants.DEVICE_TABLE_NAME, null, cv);
         db.close();
