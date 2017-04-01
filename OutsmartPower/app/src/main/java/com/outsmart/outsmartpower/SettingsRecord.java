@@ -3,7 +3,7 @@ package com.outsmart.outsmartpower;
 /**
  * Created by Rene Moise Kwibuka
  *
- * Name: Settings Record
+ * Name: Settings BaseRecord
  *
  * Description: TODO describe this class
  */

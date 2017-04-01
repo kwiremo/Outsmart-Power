@@ -1,6 +1,7 @@
 package com.outsmart.outsmartpower.Support;
 
 import android.app.Activity;
+import android.app.Fragment;
 
 /**
  * Created by Rene Moise on 1/16/2017.
@@ -12,6 +13,7 @@ public class ParentActivity {
     }
 
     private static Activity mainActivity;
+    //private static Fragment mainFragmentActivity;
 
     private ParentActivity() {
     }
@@ -26,4 +28,8 @@ public class ParentActivity {
     public static void setParentActivity(Activity myParentActivity) {
         mainActivity = myParentActivity;
     }
+
+//    public static void setMainFragmentActivity (Fragment mainFragmActivity){
+//        mainFragmentActivity = mainFragmActivity;
+//    }
 }

@@ -1,9 +1,13 @@
 package com.outsmart.outsmartpower.managers;
 
+import android.app.Activity;
+import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.util.Log;
+
+import com.outsmart.outsmartpower.Support.ParentActivity;
 
 import java.util.List;
 
@@ -15,19 +19,24 @@ import static android.content.ContentValues.TAG;
 
 public class ConnectionManager {
     private static final ConnectionManager ourInstance = new ConnectionManager();
+    private WifiManager wifiManager;
+    WifiConfiguration wifiConfig;
+    private Activity parentActivity = ParentActivity.getParentActivity();
 
     public static ConnectionManager getInstance() {
         return ourInstance;
     }
 
     private ConnectionManager() {
+        wifiManager = (WifiManager) parentActivity.getApplicationContext().
+                getSystemService(Context.WIFI_SERVICE);
+        wifiConfig = new WifiConfiguration();
     }
-    
-    public void  connectToWifi(String ssid, String password, List<ScanResult> scannedResults, WifiManager wifiManager){
-        WifiConfiguration wifiConfig = new WifiConfiguration();
+
+    //TODO: Fix the arguments of this method.
+    public void  connectToWifi(String ssid, String password, List<ScanResult> scannedResults){
+
         wifiConfig.SSID = String.format("\"%s\"", ssid);
-
-
         for (ScanResult network : scannedResults)
         {
             //check if current connected SSID
@@ -55,15 +64,27 @@ public class ConnectionManager {
                 break;
             }
         }
+        connectAndConfigureNetw(ssid);
+    }
 
+    private void connectAndConfigureNetw(String ssid){
         List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
         for( WifiConfiguration i : list ) {
             if(i.SSID != null && i.SSID.equals("\"" + ssid + "\"")) {
-                wifiManager.disconnect();
-                wifiManager.enableNetwork(i.networkId, true);
-                wifiManager.reconnect();
-                break;
+                connectToNetworkID(i.networkId);
+                return;
             }
         }
+
+        int newNetworkId = wifiManager.addNetwork(wifiConfig);
+        wifiManager.enableNetwork(newNetworkId, true);
+        wifiManager.saveConfiguration();
+        wifiManager.setWifiEnabled(true);
+    }
+
+    private void connectToNetworkID(int id){
+        wifiManager.disconnect();
+        wifiManager.enableNetwork(id, true);
+        wifiManager.reconnect();
     }
 }

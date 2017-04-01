@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
-import com.outsmart.outsmartpower.network.records.OutsmartDeviceDataRecord;
+import com.outsmart.outsmartpower.network.records.PowerRecord;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
             Constants.SECONDS + " REAL," +
             Constants.CURRENT_1 + " REAL," + Constants.CURRENT_2 + " REAL," +
             Constants.CURRENT_3 + " REAL," + Constants.CURRENT_4 + " REAL," +
-            Constants.VOLTAGE +  " REAL," + Constants.OUTSMART_DEVICE_ID + " REAL)";
+            Constants.VOLTAGE +  " REAL," + Constants.SMART_OUTLET_ID + " REAL)";
 
     //CREATE OUTSMART DEVICE TABLE
     private String CREATE_OUTSMART_DEVICES_TABLE = "CREATE TABLE "+ Constants.DEVICE_TABLE_NAME + "(" +
@@ -105,7 +105,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         db.close();
     }
 
-    public void addDataRecord(OutsmartDeviceDataRecord dataRecord)
+    public void addDataRecord(PowerRecord dataRecord)
     {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -116,7 +116,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         cv.put(Constants.CURRENT_3, dataRecord.getCurrent_3());
         cv.put(Constants.CURRENT_4, dataRecord.getCurrent_4());
         cv.put(Constants.VOLTAGE, dataRecord.getVoltage());
-        cv.put(Constants.OUTSMART_DEVICE_ID, dataRecord.getOutsmart_device_id());
+        cv.put(Constants.SMART_OUTLET_ID, dataRecord.getSmartOutletId());
 
         db.insert(Constants.RECORD_TABLE_NAME, null, cv);
         db.close();
@@ -138,19 +138,12 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         db.close();
     }
 
-    public ArrayList<OutsmartDeviceDataRecord> getAllRecordsInRange(int smID, int startSeconds, int endSeconds)
+    public ArrayList<PowerRecord> getAllRecordsInRange(int smID, int startSeconds, int endSeconds)
     {
-        ArrayList<OutsmartDeviceDataRecord> RecordList = new ArrayList<OutsmartDeviceDataRecord>();
-
-//        //Define columns that we want
-//        String[] columns = {Constants.SECONDS, Constants.CURRENT_1, Constants.CURRENT_2,
-//                Constants.CURRENT_3, Constants.CURRENT_4, Constants.VOLTAGE
-//        };
-
-
+        ArrayList<PowerRecord> RecordList = new ArrayList<PowerRecord>();
         String selectQuery = "SELECT " + Constants.SECONDS + " , " + Constants.CURRENT_1 + " , " + Constants.CURRENT_2 + " , " +
         Constants.CURRENT_3 + " , " +  Constants.CURRENT_4 + " , " + Constants.VOLTAGE + " FROM " + Constants.RECORD_TABLE_NAME +
-                " WHERE " + Constants.OUTSMART_DEVICE_ID + "==" + smID + " AND " + Constants.SECONDS + " >= " + startSeconds
+                " WHERE " + Constants.SMART_OUTLET_ID + "==" + smID + " AND " + Constants.SECONDS + " >= " + startSeconds
                 + " AND " + Constants.SECONDS + " <= " + endSeconds;
 
 
@@ -169,7 +162,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
 
 
 
-                OutsmartDeviceDataRecord contact = new OutsmartDeviceDataRecord(recordTime,current_1,current_2,current_3,
+                PowerRecord contact = new PowerRecord(recordTime,current_1,current_2,current_3,
                         current_4,voltage,smID);
                 RecordList.add(contact);
             } while (cursor.moveToNext());
@@ -206,6 +199,12 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         return outsmartDeviceInfoList;
     }
 
+    public void removeSmartOutlet(String broadcastedOutletNet){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM " + Constants.DEVICE_TABLE_NAME + "\n WHERE " + Constants.DEVICE_SSID +
+                " == '" + broadcastedOutletNet + "'");
+        db.close();
+    }
     public SettingsRecord getSetSettings(){
 
         //TODO: Implement this to actually get these data from the database.

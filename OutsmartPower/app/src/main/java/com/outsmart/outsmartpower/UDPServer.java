@@ -1,14 +1,15 @@
 package com.outsmart.outsmartpower;
 
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.managers.UDPManager;
-import com.outsmart.outsmartpower.network.records.OutsmartDeviceDataRecord;
+import com.outsmart.outsmartpower.network.records.StatusRecord;
+import com.outsmart.outsmartpower.ui.UIManager;
 
 import org.json.JSONObject;
 
@@ -28,6 +29,9 @@ public class UDPServer extends Observable implements Observer{
 
     //Instantiate one and only object of this class.
     private static UDPServer ourInstance = new UDPServer();
+
+    //Get the smart-outlet manager instance
+    private SmartOutletManager smartOutletManager;
 
     private UDPServer() {
         //addObserver();
@@ -65,22 +69,16 @@ public class UDPServer extends Observable implements Observer{
                     case Constants.CRED_RECORD:
                         String ipAdd = json.getString(Constants.IP_CONTENT);
                         int id = Integer.parseInt(json.getString(Constants.ID_CONTENT));
-                        OutsmartDeviceInfo info = new OutsmartDeviceInfo();
-                        info.setIpAddress(ipAdd);
-                        info.setSmart_Outlet_Device_ID(id);
-                        notifyObservers(info);
-
-
-                        Intent intent = new Intent(getClass().getName());
-                        // You can also include some extra data.
-                        intent.putExtra("ipAdd", ipAdd);
-                        intent.putExtra("id", id);
-                        LocalBroadcastManager.getInstance(ParentActivity.getParentActivity()).sendBroadcast(intent);
-
                         reportOutsmartCred reportOutsmartCred = (reportOutsmartCred)ParentActivity.getInstance().getParentActivity();
                         if(reportOutsmartCred != null){
                             reportOutsmartCred.onOutsmartCredReceived(id, ipAdd);
                         }
+                        break;
+                    case Constants.REPL_RECORD:
+                        UIManager.getInstance().disPlayMessage("smart-outlet connected!");
+                        break;
+                    case Constants.CONT_RECORD:
+                        smartOutletManager.receiveStatusRecord(new StatusRecord(dataReceived));
                         break;
                     default:
                         return;
@@ -89,6 +87,10 @@ public class UDPServer extends Observable implements Observer{
             catch (Exception e){
                 e.printStackTrace();
             }
+        }
+        else if(o.getClass().equals(BootlLoader.class)){
+            //Initialize the smart-outlet manager
+            smartOutletManager = SmartOutletManager.getInstance();
         }
     }
 

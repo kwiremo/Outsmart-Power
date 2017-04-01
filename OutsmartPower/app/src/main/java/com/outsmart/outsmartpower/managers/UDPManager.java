@@ -11,6 +11,7 @@ import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.UDPClient;
 import com.outsmart.outsmartpower.UDPServer;
+import com.outsmart.outsmartpower.network.records.RecordInterface;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -61,11 +62,6 @@ public class UDPManager extends Observable implements Observer{
 
         @Override
         protected Object doInBackground(Object[] objects) {
-
-
-
-            Log.e("TAG", "Server running");
-
             byte[] packetBuffer = new byte[Constants.BUFFER_SIZE];
             DatagramPacket dp = new DatagramPacket(packetBuffer, packetBuffer.length);
             try {
@@ -173,16 +169,17 @@ public class UDPManager extends Observable implements Observer{
     }
 
     //Method to send packets
-    public void sendPacket(String packetToSend, String ipAddress){
+    public void sendPacket(RecordInterface packetToSend, String ipAddress){
 
+        String packetStringToSend = packetToSend.toJSONString();
         InetAddress IPAddress;
 
         //Try getting the ipAddress from the adjacency table using the frames destination address
         try {
             IPAddress = InetAddress.getByName(ipAddress);
             //Create packet to send
-            DatagramPacket sendPacket = new DatagramPacket(packetToSend.getBytes(),
-                    packetToSend.length(),
+            DatagramPacket sendPacket = new DatagramPacket(packetStringToSend.getBytes(),
+                    packetStringToSend.length(),
                     IPAddress,
                     Constants.REMOTE_PORT);
             //Send the frame

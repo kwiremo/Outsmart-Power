@@ -7,12 +7,12 @@ package com.outsmart.outsmartpower.network.records;
 /**
  * This class extends record. It is a credential record and contain ssid and password field.
  */
-public class CredentialRecord extends Record{
+public class CredentialBaseRecord extends BaseRecord {
 
     private String ssid;
     private String password;
 
-    public CredentialRecord(String ssid, String password) {
+    public CredentialBaseRecord(String ssid, String password) {
         this.ssid = ssid;
         this.password = password;
     }

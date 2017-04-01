@@ -32,7 +32,7 @@ public class Constants {
     public static final String CURRENT_3 = "c3";
     public static final String CURRENT_4 = "c4";
     public static final String VOLTAGE = "v";
-    public static final String OUTSMART_DEVICE_ID = "outsmart_device_id";
+    public static final String SMART_OUTLET_ID = "smartOutletId";
 
 
     //OUTSMART DEVICE COLUMNS.
@@ -82,7 +82,7 @@ public class Constants {
      * Example:
      1. Credentials: type:CRED,p:12345678, s:Outsmart 288 where p is password and s is ssid.
      2. Control: type: type:CONT,p:1 where p means toggle plug number the value given. in this case plug 1.
-     3. Power Record: check 11/09/2016 for an example.
+     3. Power BaseRecord: check 11/09/2016 for an example.
      4. Echo Request: type:REQU, ip:10.30.10.138: Where ip is the ipp address of the sender.
      5. ip the ip address of the sender.
      6. ip the ip address of the sender.
@@ -95,6 +95,7 @@ public class Constants {
     public static final String IPAD_RECORD = "IPAD";    //IP address record.
 
     public static final String TYPE_LABEL = "type";
+    public static final String OUTLET_TO_TOGGLE_LABEL = "toggle";
 
     public static final String IP_CONTENT = "ip";
     public static final String ID_CONTENT = "id";

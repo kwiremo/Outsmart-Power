@@ -1,4 +1,4 @@
-package com.outsmart.outsmartpower.network;
+package com.outsmart.outsmartpower.ui;
 
 import android.Manifest;
 import android.app.Activity;
@@ -23,8 +23,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.outsmart.outsmartpower.R;
+import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.Support.Constants;
-import com.outsmart.outsmartpower.ui.StringInputDialog;
+import com.outsmart.outsmartpower.managers.SmartOutletManager;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,18 +64,24 @@ public class WifiListFragment extends android.app.ListFragment implements String
 
     public interface onReceivedPreferredWifis{
         void receivePreferredWifis(String homeWifiName, String outsmartWifiName, String homeWifiPassword, String outSmartWifiPassword,
-                                   List<ScanResult> scannedResults, WifiManager wifiManager);
+                                   List<ScanResult> scannedResults);
     }
 
     List<ScanResult> scannedResults;
 
     String homeWifiName = "";
-    String outsmartWifiName = "";
+    String broadSmartOutletNetw = "";
     String homeWifiPassword = "";
-    String outSmartWifiPassword = "";
+    String broadSmartOutletNetwPassword = "";
 
     //This variable is for saving the activity that used this fragment.
     Activity baseActivity;
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        baseActivity = (Activity) context;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -86,7 +94,7 @@ public class WifiListFragment extends android.app.ListFragment implements String
 
         Tv = (TextView) getView().findViewById(R.id.wifiListTitleTV);
         Tv.setText("Scanning...");
-        baseActivity = getActivity();
+        //baseActivity = getActivity();
         if(!hasFinishedScanning){
             //Check to see if we have all wifi permissions to scan device's wifi.
             if(getPermissionsNeededToScan().size() == 0 )
@@ -176,7 +184,7 @@ public class WifiListFragment extends android.app.ListFragment implements String
     public void onFinishedEnteringInput(String password) {
 
         if(!hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
-            outSmartWifiPassword = password;
+            broadSmartOutletNetwPassword = password;
             hasEnteredOutsmartPassword = true;
 
             wifiListAdapter = new ArrayAdapter(baseActivity,
@@ -191,8 +199,10 @@ public class WifiListFragment extends android.app.ListFragment implements String
 
             onReceivedPreferredWifis receivedPreferredWifis = (onReceivedPreferredWifis) getActivity();
             if(receivedPreferredWifis != null){
-                receivedPreferredWifis.receivePreferredWifis(homeWifiName, outsmartWifiName, outsmartWifiName,
-                        outSmartWifiPassword, scannedResults, wifiManager);
+                receivedPreferredWifis.receivePreferredWifis(homeWifiName, broadSmartOutletNetw, homeWifiPassword,
+                        broadSmartOutletNetwPassword, scannedResults);
+                baseActivity.unregisterReceiver(wifiScanReceiver);
+                baseActivity.getFragmentManager().popBackStack();
             }
         }
     }
@@ -202,11 +212,32 @@ public class WifiListFragment extends android.app.ListFragment implements String
 
         if(!hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword)
         {
-            StringInputDialog dialog = new StringInputDialog();
-            dialog.setTargetFragment(this,1);
-            dialog.show(baseActivity.getFragmentManager(),null);
+            broadSmartOutletNetw = availableOutsmartWifi.get(position);
 
-            outsmartWifiName = availableOutsmartWifi.get(position);
+            if(SmartOutletManager.getInstance().isRegistered(broadSmartOutletNetw)){
+                showDialogOK("Would you like to remove it?",new DialogInterface.OnClickListener(){
+
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        switch (i){
+                            case DialogInterface.BUTTON_POSITIVE:
+                                SmartOutletManager.getInstance().removeOutlet(broadSmartOutletNetw);
+                                UIManager.getInstance().disPlayMessage(
+                                        broadSmartOutletNetw + " was removed");
+                                break;
+                            case DialogInterface.BUTTON_NEGATIVE:
+                                break;
+                        }
+                        baseActivity.getFragmentManager().popBackStack();
+                        return;
+                    }
+                });
+            }
+            else{
+                StringInputDialog dialog = new StringInputDialog();
+                dialog.setTargetFragment(this,1);
+                dialog.show(baseActivity.getFragmentManager(),null);
+            }
         }
         else if(hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
             StringInputDialog dialog = new StringInputDialog();
@@ -217,7 +248,8 @@ public class WifiListFragment extends android.app.ListFragment implements String
         }
         else
         {
-            Toast.makeText(baseActivity,"We are still processing!", Toast.LENGTH_LONG).show();
+            //If It gets here there is a problem. Go back and try again!
+            getActivity().getFragmentManager().popBackStack();
         }
     }
 

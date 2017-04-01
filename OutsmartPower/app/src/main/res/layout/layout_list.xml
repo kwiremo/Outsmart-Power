@@ -1,21 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/backgroundColorContent">
+    android:background="@color/backgroundColorContent"
+    android:orientation="vertical">
 
     <TextView
-        android:text="TextView"
-        android:textColor="@color/colorContents"
+        android:id="@+id/wifiListTitleTV"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="?attr/actionBarSize"
         android:background="@color/backgroundColorContent"
-        android:id="@+id/wifiListTitleTV" />
+        android:text="Item List"
+        android:textAlignment="center"
+        android:textColor="@color/colorContents" />
 
     <ListView
-        android:textColor="@color/colorContents"
+        android:id="@android:id/list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/backgroundColorContent"
-        android:id="@android:id/list" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+
+        android:background="#e0e0e0"
+        android:textColor="@color/colorContents" />
+
+    <Button
+        android:id="@+id/cancelListBTN"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel" />
 </LinearLayout>

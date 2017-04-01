@@ -1,4 +1,6 @@
 package com.outsmart.outsmartpower;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -25,8 +27,11 @@ import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.managers.ConnectionManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.managers.UDPManager;
-import com.outsmart.outsmartpower.network.WifiListFragment;
-import com.outsmart.outsmartpower.network.records.CredentialRecord;
+import com.outsmart.outsmartpower.network.records.CredentialBaseRecord;
+import com.outsmart.outsmartpower.network.records.EchoRequestRecord;
+import com.outsmart.outsmartpower.ui.DisplayPowerFragment;
+import com.outsmart.outsmartpower.ui.UIManager;
+import com.outsmart.outsmartpower.ui.WifiListFragment;
 import com.outsmart.outsmartpower.ui.GetNickNameDialog;
 
 import java.util.List;
@@ -61,11 +66,21 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
     int smart_Outlet_Device_ID;
     String homeWifiName;
     String homeWifiPassword;
+    List<ScanResult> scannedResults;
+    UDPManager udpManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        //Start display Power Fragment
+        fragmentTransaction.replace(R.id.wifiListFragmentContainer,new DisplayPowerFragment());
+        //fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -74,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                UDPManager.getInstance().sendPacket("Hello", Constants.REMOTE_IP_ADDRESS);
+                UDPManager.getInstance().sendPacket(new EchoRequestRecord(), Constants.REMOTE_IP_ADDRESS);
             }
         });
 
@@ -95,39 +110,10 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         //can handle selections of the navigation options
         navigationView.setNavigationItemSelectedListener(this);
         //Bootloader has to setup everything first.
+
         BootlLoader bootlLoader = new BootlLoader(this);
-
-
-    /*    //Get the database instance
-        Db = DatabaseOperations.getInstance();
-        OutsmartDeviceDataRecord record = new OutsmartDeviceDataRecord(new DateManager(1485626052),1.1,2.2,3.3,4.4,240.4,222);
-        Db.addDataRecord(record);
-        List<OutsmartDeviceDataRecord> records = Db.getAllRecordsInRange(222,DateManager.getTodayMidnightSeconds(), DateManager.getNowSeconds());
-        double expected = 1.1;
-        String result = records.get(0).getRecordTime().getMilitaryTime();
-        Log.e("OUTPUT", ""+ expected + " " + result);
-        //setupSmartoutlet("","","");
-
-        //Start Server
-        //UDPManager.getInstance().execute(Home);
-       */
+        udpManager = UDPManager.getInstance();
     }
-/*
-    public void setupSmartoutlet(String initialSsid, String initialPassword, String nickname )
-    {
-        //Creating an outsmart oubject: This will later be moved to a setup function.
-        SmartOutlet smartOutlet = new SmartOutlet(initialSsid, initialPassword, nickname);
-        smartOutlet.setIpAddress(Constants.IP_ADDRESS);
-
-        //set the active smart outlet (For now this shall change later. The active smart outlet
-        //will be the smartoutlet that the user selects in a navigation drawer.
-
-        activeSmartoutlet = smartOutlet;
-
-        //
-        Db.addSmartOutletInfo(smartOutlet);
-    }
-    */
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -172,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         int id = item.getItemId();
 
         if (id == R.id.nav_smart_outlet_list) {
-
+            UIManager.getInstance().displayAvailableSmartOutlet();
         } else if (id == R.id.nav_setup) {
             android.app.FragmentManager fragmentManager = getFragmentManager();
             android.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -196,11 +182,11 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         return true;
     }
 
-
     @Override
     public void receivePreferredWifis(String homeWifiName, String outsmartWifiName,
                                       String homeWifiPassword, String outSmartWifiPassword,
-                                      List<ScanResult> scannedResults, WifiManager wifiManager) {
+                                      List<ScanResult> scannedResults) {
+        this.scannedResults =scannedResults;
 
         //Set the first arguments for a new device.
         ssid = outsmartWifiName;
@@ -223,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         registerReceiver(received,intentFilter);
 
         ConnectionManager.getInstance().connectToWifi(outsmartWifiName, outSmartWifiPassword,
-                scannedResults, wifiManager);
+                scannedResults);
     }
 
     @Override
@@ -244,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
 
     @Override
     public void onFinishedEditDialog(String userInput) {
-        if(password != null || password != ""){
+        if(userInput != null && !userInput.equals("")){
             nickname = userInput;
         }
         else
@@ -256,6 +242,21 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
                 password,ipAddress,smart_Outlet_Device_ID);
 
         SmartOutletManager.getInstance().saveSmartOutlet(outsmartDeviceInfo);
+
+
+        //TODO: Create global references for connectivity manager and filters. Also fix the arguments of connectToWifiBelow:
+        //Get the connectivity manager.
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        //Create a filter for to connectivity action.
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(cm.CONNECTIVITY_ACTION);
+
+        //Register the receiver.
+        registerReceiver(received,intentFilter);
+
+        ConnectionManager.getInstance().connectToWifi(homeWifiName, homeWifiPassword,
+                scannedResults);
     }
 
     private class ConnectedReceived extends BroadcastReceiver {
@@ -272,19 +273,27 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
                     WifiInfo wifiInfo = wifiManager.getConnectionInfo();
                     String ssid = wifiInfo.getSSID();
 
+                    //This is when we just got connected to the smart-outlet network
                     if (ssid.contains(Constants.PASWWPRD_KEYWORD)) {    //Used contains rather than equals because the ssid returned has extra quotes that I am not sure why
                         //they are added. Change it to equals if you can fix it.
                         Log.e(TAG, " -- Wifi connected --- " + " SSID " + ssid);
-                        CredentialRecord credentialRecord = new CredentialRecord(homeWifiName, homeWifiPassword);
-                        UDPManager.getInstance().sendPacket(credentialRecord.toJSONString(), Constants.REMOTE_IP_ADDRESS);
-
-
-                        getFragmentManager().popBackStack();
+                        CredentialBaseRecord credentialRecord = new CredentialBaseRecord(homeWifiName, homeWifiPassword);
+                        udpManager.sendPacket(credentialRecord, Constants.REMOTE_IP_ADDRESS);
                         unregisterReceiver(received);
                     }
 
+                    //This is when we just got connected to the home-wifi.
+                    else if(ssid.contains(homeWifiName)){
+                        OutsmartDeviceInfo deviceInfo = SmartOutletManager.getInstance().getActiveSmartOutlet();
+                        if(deviceInfo != null){
+                            String ipAddress =deviceInfo.getIpAddress();
+                            udpManager.sendPacket(new EchoRequestRecord(), ipAddress);
+                            unregisterReceiver(received);
+                        }
+                    }
                 }
             }
+
         }
     }
 }

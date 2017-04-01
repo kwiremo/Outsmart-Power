@@ -65,4 +65,9 @@ public class OutsmartDeviceInfo {
     public int getSmart_Outlet_Device_ID() {
         return smart_Outlet_Device_ID;
     }
+
+    @Override
+    public String toString() {
+        return getNickname();
+    }
 }
