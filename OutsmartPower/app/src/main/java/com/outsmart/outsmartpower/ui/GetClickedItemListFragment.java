@@ -10,7 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 
-import com.outsmart.outsmartpower.OutsmartDeviceInfo;
+import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 
@@ -32,7 +32,7 @@ public class GetClickedItemListFragment extends ListFragment {
 
     //This adapter is passed to the listFragment to be displayed. The content is gotten from the
     //the OutsmartManager
-    ArrayAdapter<OutsmartDeviceInfo> adapter;
+    ArrayAdapter<SmartOutlet> adapter;
 
     //Outsmart Manager is needed to get the list of available outsmart.
     SmartOutletManager outsmartManager = SmartOutletManager.getInstance();
@@ -52,7 +52,7 @@ public class GetClickedItemListFragment extends ListFragment {
         });
 
         //Initialize the arrayAdapter.
-        adapter = new ArrayAdapter<OutsmartDeviceInfo>(getActivity(),
+        adapter = new ArrayAdapter<SmartOutlet>(getActivity(),
                 android.R.layout.simple_list_item_1,outsmartManager.getSmartOutletList());
         setListAdapter(adapter);
     }

@@ -11,13 +11,13 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-import com.outsmart.outsmartpower.OutsmartDeviceInfo;
+import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
-import com.outsmart.outsmartpower.managers.UDPManager;
+import com.outsmart.outsmartpower.network.UDPManager;
 import com.outsmart.outsmartpower.network.records.ControlRecord;
-import com.outsmart.outsmartpower.network.records.StatusRecord;
+import com.outsmart.outsmartpower.records.StatusRecord;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -70,7 +70,7 @@ public class DisplayPowerFragment extends Fragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        SmartOutletManager.getInstance().addObserver(MainPageUI.getInstance());
+        //SmartOutletManager.getInstance().addObserver(MainPageUI.getInstance());
         //Initialize the showActiveSmartoutlet
         showActiveTV = (TextView) getActivity().findViewById(R.id.deviceNameTV);
         parentActivity = ParentActivity.getParentActivity();
@@ -105,6 +105,7 @@ public class DisplayPowerFragment extends Fragment {
         //setEnabled(false);
         //BUTTON LISTENERS
 
+
         // attach an OnClickListener
         tglbtn_OffOn1.setOnClickListener(new View.OnClickListener()
         {
@@ -129,7 +130,7 @@ public class DisplayPowerFragment extends Fragment {
             public void onClick(View v)
             {
                 if(tglbtn_OffOn2.isChecked()) {
-                    UDPManager.getInstance().sendPacket(new ControlRecord("on2"),
+                      UDPManager.getInstance().sendPacket(new ControlRecord("on2"),
                             smartOutletManager.getActiveSmartOutlet().getIpAddress());
                 }
                 else{
@@ -173,11 +174,15 @@ public class DisplayPowerFragment extends Fragment {
             }
         });
 
-        smartOutletManager.addObserver(new DisplayPowerFragmentObserver());
-    }
+        btn_More1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                UDPManager.getInstance().sendPacket(new ControlRecord("on4"),
+                        smartOutletManager.getActiveSmartOutlet().getIpAddress());
+            }
+        });
 
-    public void receiveActiveSmartOutlet(String activeSmartOutlet){
-        showActiveTV.setText(activeSmartOutlet);
+        smartOutletManager.addObserver(new DisplayPowerFragmentObserver());
     }
 
     public class DisplayPowerFragmentObserver implements Observer{
@@ -188,12 +193,12 @@ public class DisplayPowerFragment extends Fragment {
             if(observable.getClass().equals(SmartOutletManager.class)){
             if(smartOutletManager.isSmart_OutletConnected() &&
                     smartOutletManager.getActiveSmartOutlet() != null)
-                setEnabled(true);
-            else
-                setEnabled(false);
+                //setEnabled(true);
+            //else
+                //setEnabled(false);
 
-                if(observable.getClass().equals(OutsmartDeviceInfo.class)){
-                    showActiveTV.setText(((OutsmartDeviceInfo) o).getNickname());
+                if(observable.getClass().equals(SmartOutlet.class)){
+                    showActiveTV.setText(((SmartOutlet) o).getNickname());
                 }
                 else if(observable.getClass().equals(StatusRecord.class)){
                     tglbtn_OffOn1.setChecked(((StatusRecord) o).getStatus1());

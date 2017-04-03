@@ -1,11 +1,10 @@
-package com.outsmart.outsmartpower.network.records;
+package com.outsmart.outsmartpower.records;
 
 /**
  * Created by Rene Moise on 3/30/2017.
  */
 
 import com.outsmart.outsmartpower.Support.Constants;
-import com.outsmart.outsmartpower.ui.StringInputDialog;
 
 import org.json.JSONObject;
 

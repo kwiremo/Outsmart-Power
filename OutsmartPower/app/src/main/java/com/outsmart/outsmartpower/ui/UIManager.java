@@ -10,7 +10,7 @@ import android.app.FragmentTransaction;
 import android.content.Context;
 import android.widget.Toast;
 
-import com.outsmart.outsmartpower.OutsmartDeviceInfo;
+import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.ParentActivity;
@@ -28,7 +28,7 @@ public class UIManager implements Observer,GetClickedItemListFragment.OnReceived
     public static UIManager getInstance() {
         return ourInstance;
     }
-    List<OutsmartDeviceInfo> deviceInfos;
+    List<SmartOutlet> deviceInfos;
     Activity parentActivity = ParentActivity.getParentActivity();
     SmartOutletManager smartOutletManager;
 

@@ -1,6 +1,7 @@
 package com.outsmart.outsmartpower;
 
-import com.outsmart.outsmartpower.network.records.PowerRecord;
+import com.outsmart.outsmartpower.managers.DateManager;
+import com.outsmart.outsmartpower.records.PowerRecord;
 
 import org.junit.Test;
 import static org.junit.Assert.*;

@@ -1,8 +1,8 @@
-package com.outsmart.outsmartpower.network.records;
+package com.outsmart.outsmartpower.records;
 
 import android.util.Log;
 
-import com.outsmart.outsmartpower.DateManager;
+import com.outsmart.outsmartpower.managers.DateManager;
 import com.outsmart.outsmartpower.Support.Constants;
 
 import org.json.JSONObject;

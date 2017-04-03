@@ -1,14 +1,10 @@
-package com.outsmart.outsmartpower;
-
-import android.content.Intent;
-import android.support.v4.content.LocalBroadcastManager;
+package com.outsmart.outsmartpower.network;
 
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
-import com.outsmart.outsmartpower.managers.UDPManager;
-import com.outsmart.outsmartpower.network.records.StatusRecord;
+import com.outsmart.outsmartpower.records.StatusRecord;
 import com.outsmart.outsmartpower.ui.UIManager;
 
 import org.json.JSONObject;
@@ -75,6 +71,7 @@ public class UDPServer extends Observable implements Observer{
                         }
                         break;
                     case Constants.REPL_RECORD:
+                        smartOutletManager.setSmart_OutletConnected(true);
                         UIManager.getInstance().disPlayMessage("smart-outlet connected!");
                         break;
                     case Constants.CONT_RECORD:

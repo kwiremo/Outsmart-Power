@@ -4,8 +4,7 @@ import android.app.Activity;
 
 import com.outsmart.outsmartpower.managers.SettingsManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
-import com.outsmart.outsmartpower.managers.UDPManager;
-import com.outsmart.outsmartpower.ui.MainPageUI;
+import com.outsmart.outsmartpower.network.UDPManager;
 import com.outsmart.outsmartpower.ui.UIManager;
 
 import java.util.Observable;

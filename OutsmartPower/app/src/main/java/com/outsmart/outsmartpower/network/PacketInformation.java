@@ -1,4 +1,4 @@
-package com.outsmart.outsmartpower;
+package com.outsmart.outsmartpower.network;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;

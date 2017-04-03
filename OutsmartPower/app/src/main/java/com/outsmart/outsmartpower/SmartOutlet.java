@@ -1,20 +1,11 @@
 package com.outsmart.outsmartpower;
 
-import android.support.annotation.NonNull;
-
-import com.outsmart.outsmartpower.Support.Constants;
-
-import org.json.JSONStringer;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+/**
+ * Created by Rene Moise on 1/28/2017.
+ */
 
 /**
- * Created by christian.wagner on 1/14/17.
- *
- * '-' denotes private, while '+' denotes public
+ * * '-' denotes private, while '+' denotes public
  *
  * Description: This class is made to represent a smart outlet.
  *
@@ -26,63 +17,67 @@ import java.util.ListIterator;
  * - String ipAddress: The most recent IP address for the smart outlet
  * - boolean active: True means this smart outlet is actively communicating with the android application
  * - DatabaseOperations database: The power profile database associated with this smart outlet
- *
- * Methods:
- * + smartOutlet(String password, String ssid) - This is the constructor for the Smart Outlet Class
- * + boolean addEntry(String JSONstring) - This adds an entry into the sqlLite database associated with this Smart Outlet
- * + getPresentEntry() - Gets the latest Power profile (voltage, current, etc) from the sqlLite database associated with this Smart Outlet
- *
  */
-
 public class SmartOutlet {
+    DatabaseOperations Db = DatabaseOperations.getInstance();
 
-
-    private DatabaseOperations database; //The database associated with this smart outlet
-    private OutsmartDeviceInfo smartOutletInfo;
-    private int id;     //There is id in the OutsmartDeviceInfo. HOwever we are also saving it here
-                        //SO that we can retrieve data of this instance with this ID.
-
-    //Constructor for the SmartOutlet Class
-    public SmartOutlet( String initialSsid, String initialPassword, String nickname, String ipAddress, int id)  {
-        saveDatabaseInfo(initialSsid,initialPassword,nickname,ipAddress,id);
-        this.id = id;
+    public SmartOutlet(String nickname, String ssid, String password,
+                       String ipAddress, int smart_Outlet_Device_ID) {
+        this.nickname = nickname;
+        this.ssid = ssid;
+        this.password = password;
+        this.ipAddress = ipAddress;
+        this.smart_Outlet_Device_ID = smart_Outlet_Device_ID;
     }
 
-    //Adds power profile entry to the data base associated with this Smart Outlet
-    public boolean addEntry(String jsonString) {
-        //Pass jsonString to DatabaseOperations class to test for
+    private String nickname; //The name that the user will see for this outlet
+    private String ssid; //The SSID broadcasted by this Smart Outlet
+    private String password; //The password to connect to this Smart Outlet's broadcasted SSID
+    private String ipAddress; //The most recent IP address for the smart outlet
+    private int smart_Outlet_Device_ID;
 
-        return false;
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
-    private void saveDatabaseInfo(String initialSsid, String initialPassword, String nickname, String ipAddress, int id)
-    {
-        smartOutletInfo = new OutsmartDeviceInfo(nickname,initialSsid,initialPassword,ipAddress,id);
-        database.addSmartOutletInfo(smartOutletInfo);
+    public void setSsid(String ssid) {
+        this.ssid = ssid;
     }
 
-    private OutsmartDeviceInfo getDatabaseInfo()
-    {
-        return smartOutletInfo;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
-    //Getter for the ssid field
-    public String getSsid() {
-        return smartOutletInfo.getSsid();
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
-    //Getter for the password field
-    public String getPassword() {
-        return smartOutletInfo.getPassword();
+    public void setSmart_Outlet_Device_ID(int smart_Outlet_Device_ID) {
+        this.smart_Outlet_Device_ID = smart_Outlet_Device_ID;
     }
 
-    //Getter for the nickname field
     public String getNickname() {
-        return smartOutletInfo.getSsid();
+        return nickname;
     }
 
+    public String getSsid() {
+        return ssid;
+    }
+
+    public String getPassword() {
+        return password;
+    }
 
     public String getIpAddress() {
-        return smartOutletInfo.getIpAddress();
+        return ipAddress;
+    }
+
+    public int getSmart_Outlet_Device_ID() {
+        return smart_Outlet_Device_ID;
+    }
+
+    @Override
+    public String toString() {
+        return getNickname();
     }
 }

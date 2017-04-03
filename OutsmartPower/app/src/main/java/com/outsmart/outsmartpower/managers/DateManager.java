@@ -1,5 +1,6 @@
-package com.outsmart.outsmartpower;
+package com.outsmart.outsmartpower.managers;
 
+import com.outsmart.outsmartpower.DATE_FORMAT;
 import com.outsmart.outsmartpower.Support.Constants;
 
 import java.sql.Timestamp;

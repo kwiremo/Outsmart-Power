@@ -8,7 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
-import com.outsmart.outsmartpower.network.records.PowerRecord;
+import com.outsmart.outsmartpower.managers.DateManager;
+import com.outsmart.outsmartpower.records.PowerRecord;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,7 +124,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
     }
 
     //Add smart outlet information
-    public void addSmartOutletInfo(OutsmartDeviceInfo smout)
+    public void addSmartOutletInfo(SmartOutlet smout)
     {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -171,15 +172,15 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         return RecordList;
     }
 
-    public List<OutsmartDeviceInfo> getSmartOutlerInfo()
+    public List<SmartOutlet> getSmartOutlerInfo()
     {
         String selectQuery = "SELECT " + Constants.DEVICE_NAME + " , " + Constants.DEVICE_SSID + " , " + Constants.IP_ADDRESS + " , " +
                 Constants.DEVICE_PASSWORD + " , " +  Constants.DEVICE_ID + " FROM " + Constants.DEVICE_TABLE_NAME;
 
         //This is a list of all smartDevices that are saved.
-        ArrayList<OutsmartDeviceInfo> outsmartDeviceInfoList = new ArrayList<>();
+        ArrayList<SmartOutlet> smartOutletList = new ArrayList<>();
 
-        OutsmartDeviceInfo info = null;
+        SmartOutlet info = null;
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
 
@@ -191,12 +192,12 @@ public class DatabaseOperations extends SQLiteOpenHelper {
                 String ip_address = cursor.getString(2);
                 String password = cursor.getString(3);
                 int id = cursor.getInt(4);
-                info = new OutsmartDeviceInfo(name,ssid,password,ip_address,id);
-                outsmartDeviceInfoList.add(info);
+                info = new SmartOutlet(name,ssid,password,ip_address,id);
+                smartOutletList.add(info);
             } while (cursor.moveToNext());
         }
         // return contact list
-        return outsmartDeviceInfoList;
+        return smartOutletList;
     }
 
     public void removeSmartOutlet(String broadcastedOutletNet){
@@ -208,6 +209,6 @@ public class DatabaseOperations extends SQLiteOpenHelper {
     public SettingsRecord getSetSettings(){
 
         //TODO: Implement this to actually get these data from the database.
-        return new SettingsRecord(1,DATE_FORMAT.dayFirst,TIME_FORMAT.military,UNIT_PREFERENCE.Kwh);
+        return new SettingsRecord(1, DATE_FORMAT.dayFirst, TIME_FORMAT.military, UNIT_PREFERENCE.Kwh);
     }
 }

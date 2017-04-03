@@ -1,4 +1,4 @@
-package com.outsmart.outsmartpower;
+package com.outsmart.outsmartpower.managers;
 
 /**
  * Created by Rene Moise on 1/28/2017.

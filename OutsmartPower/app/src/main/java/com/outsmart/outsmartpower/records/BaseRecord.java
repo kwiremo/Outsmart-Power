@@ -1,4 +1,4 @@
-package com.outsmart.outsmartpower.network.records;
+package com.outsmart.outsmartpower.records;
 
 import org.json.JSONObject;
 

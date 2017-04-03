@@ -1,8 +1,10 @@
-package com.outsmart.outsmartpower.network.records;
+package com.outsmart.outsmartpower.records;
 
 /**
  * Created by Rene Moise on 3/27/2017.
  */
+
+import com.outsmart.outsmartpower.records.EchoRecord;
 
 /**
  * This class is used to create an echo reply record. This implements the toJSONString.

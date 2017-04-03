@@ -1,17 +1,13 @@
-package com.outsmart.outsmartpower.managers;
+package com.outsmart.outsmartpower.network;
 
 import android.os.AsyncTask;
 
-import android.util.Log;
 import android.widget.Toast;
 
-import com.outsmart.outsmartpower.PacketInformation;
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
-import com.outsmart.outsmartpower.UDPClient;
-import com.outsmart.outsmartpower.UDPServer;
-import com.outsmart.outsmartpower.network.records.RecordInterface;
+import com.outsmart.outsmartpower.records.RecordInterface;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

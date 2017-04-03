@@ -23,7 +23,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.outsmart.outsmartpower.R;
-import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 

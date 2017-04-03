@@ -1,4 +1,4 @@
-package com.outsmart.outsmartpower.network.records;
+package com.outsmart.outsmartpower.records;
 
 /**
  * Created by Rene Moise on 3/27/2017.

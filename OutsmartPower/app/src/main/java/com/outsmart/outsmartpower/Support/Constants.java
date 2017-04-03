@@ -1,7 +1,5 @@
 package com.outsmart.outsmartpower.Support;
 
-import com.outsmart.outsmartpower.SmartOutlet;
-
 /**
  * Created by Rene Moise on 1/16/2017.
  */

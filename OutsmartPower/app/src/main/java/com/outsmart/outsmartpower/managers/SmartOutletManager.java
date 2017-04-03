@@ -1,14 +1,9 @@
 package com.outsmart.outsmartpower.managers;
 
-import android.app.Fragment;
-
 import com.outsmart.outsmartpower.DatabaseOperations;
-import com.outsmart.outsmartpower.OutsmartDeviceInfo;
-import com.outsmart.outsmartpower.R;
+import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.Support.BootlLoader;
-import com.outsmart.outsmartpower.Support.ParentActivity;
-import com.outsmart.outsmartpower.network.records.StatusRecord;
-import com.outsmart.outsmartpower.ui.DisplayPowerFragment;
+import com.outsmart.outsmartpower.records.StatusRecord;
 
 import java.util.List;
 import java.util.Observable;
@@ -22,15 +17,15 @@ public class SmartOutletManager extends Observable implements Observer{
     public static SmartOutletManager getInstance() {
         return ourInstance;
     }
-    private OutsmartDeviceInfo activeSmartOutlet;
+    private SmartOutlet activeSmartOutlet;
     private boolean smart_OutletConnected;
 
     /**
-     * The OutsmartDeviceInfo class represents info for a single remote outsmart device that is
+     * The SmartOutlet class represents info for a single remote outsmart device that is
      * already saved in the database. We need to have this list at the start of the program.
      * This manager fetched a list from the database.
      */
-    private List<OutsmartDeviceInfo> smartOutletList;
+    private List<SmartOutlet> smartOutletList;
 
     /**
      * DatabaseOperation Instance. SmartOutletManager will have access to the database. It will
@@ -44,7 +39,7 @@ public class SmartOutletManager extends Observable implements Observer{
     //Get the smart outlet informations.
 
 
-    public List<OutsmartDeviceInfo> getSmartOutletList() {
+    public List<SmartOutlet> getSmartOutletList() {
         return smartOutletList;
     }
 
@@ -70,16 +65,12 @@ public class SmartOutletManager extends Observable implements Observer{
 
             activeSmartOutlet = smartOutletList.get(0);
 
-            DisplayPowerFragment mainPage = (DisplayPowerFragment) ParentActivity.
-                    getParentActivity().getFragmentManager().findFragmentById(R.id.content_main);
-            mainPage.receiveActiveSmartOutlet(activeSmartOutlet.getNickname());
-
             //Add the main page observer.
             notifyObservers();
         }
     }
 
-    public void saveSmartOutlet(OutsmartDeviceInfo info){
+    public void saveSmartOutlet(SmartOutlet info){
         activeSmartOutlet = info;
         databaseOperations.addSmartOutletInfo(info);
         smartOutletList.add(info);
@@ -87,7 +78,7 @@ public class SmartOutletManager extends Observable implements Observer{
         //TODO: Make sure to update the list of available smart Outlet.
     }
 
-    public void setActiveSmartOutlet(OutsmartDeviceInfo activeSmartOutlet) {
+    public void setActiveSmartOutlet(SmartOutlet activeSmartOutlet) {
         this.activeSmartOutlet = activeSmartOutlet;
         updateObservers();
     }
@@ -95,7 +86,7 @@ public class SmartOutletManager extends Observable implements Observer{
     /**
      * It returns the active smart outlet.
      */
-    public OutsmartDeviceInfo getActiveSmartOutlet() {
+    public SmartOutlet getActiveSmartOutlet() {
         return activeSmartOutlet;
     }
 
@@ -109,7 +100,7 @@ public class SmartOutletManager extends Observable implements Observer{
     }
 
     public boolean isRegistered(String broadSmartOutletNetw){
-        for(OutsmartDeviceInfo smOut:smartOutletList){
+        for(SmartOutlet smOut:smartOutletList){
             if(smOut.getSsid().equals( broadSmartOutletNetw)){
                 return true;
             }

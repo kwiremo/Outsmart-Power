@@ -26,9 +26,10 @@ import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.managers.ConnectionManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
-import com.outsmart.outsmartpower.managers.UDPManager;
+import com.outsmart.outsmartpower.network.UDPManager;
+import com.outsmart.outsmartpower.network.UDPServer;
 import com.outsmart.outsmartpower.network.records.CredentialBaseRecord;
-import com.outsmart.outsmartpower.network.records.EchoRequestRecord;
+import com.outsmart.outsmartpower.records.EchoRequestRecord;
 import com.outsmart.outsmartpower.ui.DisplayPowerFragment;
 import com.outsmart.outsmartpower.ui.UIManager;
 import com.outsmart.outsmartpower.ui.WifiListFragment;
@@ -238,10 +239,10 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         /**
          * At this point we have everything we need to save a new outsmart device.
          */
-        OutsmartDeviceInfo outsmartDeviceInfo = new OutsmartDeviceInfo(nickname,ssid,
+        SmartOutlet smartOutlet = new SmartOutlet(nickname,ssid,
                 password,ipAddress,smart_Outlet_Device_ID);
 
-        SmartOutletManager.getInstance().saveSmartOutlet(outsmartDeviceInfo);
+        SmartOutletManager.getInstance().saveSmartOutlet(smartOutlet);
 
 
         //TODO: Create global references for connectivity manager and filters. Also fix the arguments of connectToWifiBelow:
@@ -284,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
 
                     //This is when we just got connected to the home-wifi.
                     else if(ssid.contains(homeWifiName)){
-                        OutsmartDeviceInfo deviceInfo = SmartOutletManager.getInstance().getActiveSmartOutlet();
+                        SmartOutlet deviceInfo = SmartOutletManager.getInstance().getActiveSmartOutlet();
                         if(deviceInfo != null){
                             String ipAddress =deviceInfo.getIpAddress();
                             udpManager.sendPacket(new EchoRequestRecord(), ipAddress);
