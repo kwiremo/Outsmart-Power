@@ -4,6 +4,7 @@ import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
+import com.outsmart.outsmartpower.records.PowerRecord;
 import com.outsmart.outsmartpower.records.StatusRecord;
 import com.outsmart.outsmartpower.ui.UIManager;
 
@@ -34,7 +35,7 @@ public class UDPServer extends Observable implements Observer{
     }
 
     public interface reportOutsmartCred{
-        public void onOutsmartCredReceived(int id, String ip);
+        public void onOutsmartCredReceived(String id, String ip);
     }
     //To return a singleton instance.
     public static UDPServer getOurInstance() {
@@ -45,10 +46,12 @@ public class UDPServer extends Observable implements Observer{
     //only packets destined for itself
     @Override
     public void update(Observable o, Object arg) {
-        String dataReceived = arg.toString();
+
+
 
         //If the UDPManager is notifying with a power record, this is for destined for the server
-        if(o.getClass() == UDPManager.class){
+        if(o.getClass() == UDPManager.class && o != null){
+            String dataReceived = arg.toString();
             JSONObject json;
             try {
                  json = new JSONObject(dataReceived);
@@ -64,8 +67,9 @@ public class UDPServer extends Observable implements Observer{
                 switch (type){
                     case Constants.CRED_RECORD:
                         String ipAdd = json.getString(Constants.IP_CONTENT);
-                        int id = Integer.parseInt(json.getString(Constants.ID_CONTENT));
-                        reportOutsmartCred reportOutsmartCred = (reportOutsmartCred)ParentActivity.getInstance().getParentActivity();
+                        String id = (json.getString(Constants.ID_CONTENT));
+                        reportOutsmartCred reportOutsmartCred = (reportOutsmartCred)ParentActivity.
+                                getInstance().getParentActivity();
                         if(reportOutsmartCred != null){
                             reportOutsmartCred.onOutsmartCredReceived(id, ipAdd);
                         }
@@ -76,6 +80,9 @@ public class UDPServer extends Observable implements Observer{
                         break;
                     case Constants.CONT_RECORD:
                         smartOutletManager.receiveStatusRecord(new StatusRecord(dataReceived));
+                        break;
+                    case Constants.PORE_RECORD:
+                        smartOutletManager.receivePowerRecord(new PowerRecord(dataReceived));
                         break;
                     default:
                         return;

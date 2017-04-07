@@ -15,7 +15,7 @@ import org.json.JSONObject;
 public class BaseRecord implements RecordInterface {
 
     JSONObject data;
-    int smartOutletID;
+    String smartOutletID;
 
     public BaseRecord() {
         data = new JSONObject();
@@ -26,7 +26,7 @@ public class BaseRecord implements RecordInterface {
         return null;
     }
 
-    public int getSmartOutletID() {
+    public String getSmartOutletID() {
         return smartOutletID;
     }
 }

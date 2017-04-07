@@ -5,6 +5,7 @@ import android.app.Activity;
 import com.outsmart.outsmartpower.managers.SettingsManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.network.UDPManager;
+import com.outsmart.outsmartpower.network.UDPServer;
 import com.outsmart.outsmartpower.ui.UIManager;
 
 import java.util.Observable;
@@ -26,7 +27,7 @@ public class BootlLoader extends Observable{
         addObserver(SmartOutletManager.getInstance());  // Add the SmartOutletManager observer.
         addObserver(UDPManager.getInstance()); //Add the UDPManager as an observer
         addObserver(UIManager.getInstance());   //add the UI as an observer.
-
+        addObserver(UDPServer.getOurInstance());
         //Set changed
         setChanged();
         //Notify observers that there is a change.

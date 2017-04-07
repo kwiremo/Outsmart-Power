@@ -35,13 +35,13 @@ public class DatabaseOperations extends SQLiteOpenHelper {
             Constants.SECONDS + " REAL," +
             Constants.CURRENT_1 + " REAL," + Constants.CURRENT_2 + " REAL," +
             Constants.CURRENT_3 + " REAL," + Constants.CURRENT_4 + " REAL," +
-            Constants.VOLTAGE +  " REAL," + Constants.SMART_OUTLET_ID + " REAL)";
+            Constants.VOLTAGE +  " REAL," + Constants.SMART_OUTLET_ID + " CHARACTER(4))";
 
     //CREATE OUTSMART DEVICE TABLE
     private String CREATE_OUTSMART_DEVICES_TABLE = "CREATE TABLE "+ Constants.DEVICE_TABLE_NAME + "(" +
             Constants.DEVICE_RECORD_ID + " integer primary key autoincrement, " + Constants.DEVICE_NAME + " CHARACTER(30)," +
             Constants.IP_ADDRESS + " CHARACTER(15)," +
-            Constants.DEVICE_SSID + " CHARACTER(15)," + Constants.DEVICE_PASSWORD + " CHARACTER(15)," + Constants.DEVICE_ID + " REAL)";
+            Constants.DEVICE_SSID + " CHARACTER(15)," + Constants.DEVICE_PASSWORD + " CHARACTER(15)," + Constants.DEVICE_ID + " CHARACTER(4))";
 
     //CREATE SETTINGS TABLE
     /*
@@ -106,7 +106,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         db.close();
     }
 
-    public void addDataRecord(PowerRecord dataRecord)
+    public void savePowerRecord(PowerRecord dataRecord)
     {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -139,7 +139,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         db.close();
     }
 
-    public ArrayList<PowerRecord> getAllRecordsInRange(int smID, int startSeconds, int endSeconds)
+    public ArrayList<PowerRecord> getAllRecordsInRange(String smID, int startSeconds, int endSeconds)
     {
         ArrayList<PowerRecord> RecordList = new ArrayList<PowerRecord>();
         String selectQuery = "SELECT " + Constants.SECONDS + " , " + Constants.CURRENT_1 + " , " + Constants.CURRENT_2 + " , " +
@@ -191,7 +191,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
                 String ssid = cursor.getString(1);
                 String ip_address = cursor.getString(2);
                 String password = cursor.getString(3);
-                int id = cursor.getInt(4);
+                String id = cursor.getString(4);
                 info = new SmartOutlet(name,ssid,password,ip_address,id);
                 smartOutletList.add(info);
             } while (cursor.moveToNext());

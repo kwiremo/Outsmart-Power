@@ -3,6 +3,7 @@ package com.outsmart.outsmartpower.managers;
 import com.outsmart.outsmartpower.DatabaseOperations;
 import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.Support.BootlLoader;
+import com.outsmart.outsmartpower.records.PowerRecord;
 import com.outsmart.outsmartpower.records.StatusRecord;
 
 import java.util.List;
@@ -63,7 +64,7 @@ public class SmartOutletManager extends Observable implements Observer{
             //Initialize smartOutlet
             smart_OutletConnected = false;
 
-            activeSmartOutlet = smartOutletList.get(0);
+            //activeSmartOutlet = smartOutletList.get(0);
 
             //Add the main page observer.
             notifyObservers();
@@ -133,5 +134,20 @@ public class SmartOutletManager extends Observable implements Observer{
     private void updateObservers(){
         setChanged();
         notifyObservers();
+    }
+
+    /**
+     * When the smart-outlet-manager receives a packet from the UDPManager, it checks if the
+     * id of the sender matches the active smart-outlet. If so, it will update the UI.
+     * Also, the record is saved in the database.
+     * @param record
+     */
+    public void receivePowerRecord(PowerRecord record){
+        //if(record.getSmartOutletId() == activeSmartOutlet.getSmart_Outlet_Device_ID()){
+            notifyObservers(record);
+        //}
+
+        //Save the record in the database
+        databaseOperations.savePowerRecord(record);
     }
 }

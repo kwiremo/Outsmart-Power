@@ -16,7 +16,8 @@ import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.network.UDPManager;
-import com.outsmart.outsmartpower.network.records.ControlRecord;
+import com.outsmart.outsmartpower.records.ControlRecord;
+import com.outsmart.outsmartpower.records.PowerRecord;
 import com.outsmart.outsmartpower.records.StatusRecord;
 
 import java.util.Observable;
@@ -51,8 +52,6 @@ public class DisplayPowerFragment extends Fragment {
     //It has a reference to the OutsmartManager. It will be used to know what smart-outlet is
     //active at the moment. That is the device that will be sent the information.
     SmartOutletManager smartOutletManager;
-
-
     /**
      * We are using the content_main layout.
      * @param inflater
@@ -182,32 +181,36 @@ public class DisplayPowerFragment extends Fragment {
             }
         });
 
-        smartOutletManager.addObserver(new DisplayPowerFragmentObserver());
+        //TODO: Find a way to send packets to this fragment.
+        //smartOutletManager.addObserver(myInstance);
     }
 
     public class DisplayPowerFragmentObserver implements Observer{
+
+
 
         @Override
         public void update(Observable observable, Object o) {
 
             if(observable.getClass().equals(SmartOutletManager.class)){
-            if(smartOutletManager.isSmart_OutletConnected() &&
-                    smartOutletManager.getActiveSmartOutlet() != null)
-                //setEnabled(true);
-            //else
-                //setEnabled(false);
 
-                if(observable.getClass().equals(SmartOutlet.class)){
-                    showActiveTV.setText(((SmartOutlet) o).getNickname());
-                }
-                else if(observable.getClass().equals(StatusRecord.class)){
-                    tglbtn_OffOn1.setChecked(((StatusRecord) o).getStatus1());
-                    tglbtn_OffOn2.setChecked(((StatusRecord) o).getStatus2());
-                    tglbtn_OffOn3.setChecked(((StatusRecord) o).getStatus3());
-                    tglbtn_OffOn4.setChecked(((StatusRecord) o).getStatus4());
+                if(o.getClass() != null) {
+                    if (o.getClass().equals(SmartOutlet.class)) {
+                        showActiveTV.setText(((SmartOutlet) o).getNickname());
+                    } else if (o.getClass().equals(StatusRecord.class)) {
+                        tglbtn_OffOn1.setChecked(((StatusRecord) o).getStatus1());
+                        tglbtn_OffOn2.setChecked(((StatusRecord) o).getStatus2());
+                        tglbtn_OffOn3.setChecked(((StatusRecord) o).getStatus3());
+                        tglbtn_OffOn4.setChecked(((StatusRecord) o).getStatus4());
+                    } else if (o.getClass() == PowerRecord.class){
+                        PowerRecord record = (PowerRecord)o;
+                        tv_power1.setText(record.getPower1()+"");
+                        tv_power1.setText(record.getPower2()+"");
+                        tv_power1.setText(record.getPower3()+"");
+                        tv_power1.setText(record.getPower4()+"");
+                    }
                 }
             }
-
         }
     }
 

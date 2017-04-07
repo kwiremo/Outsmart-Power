@@ -17,7 +17,7 @@ public class DatabaseOperationsTest {
 
         DatabaseOperations Db = DatabaseOperations.getInstance();
         PowerRecord record = new PowerRecord(new DateManager(1485626052),1.1,2.2,3.3,4.4,240.4,222);
-        Db.addDataRecord(record);
+        Db.savePowerRecord(record);
         List<PowerRecord> records = Db.getAllRecordsInRange(222,DateManager.getTodayMidnightSeconds());
         double expected = 1.1;
         double result = records.get(0).getCurrent_1();

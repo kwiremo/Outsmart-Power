@@ -17,11 +17,11 @@ int localUdpPort = 2390;
 int remoteIPPort = 4000;
 WiFiUDP Udp;
 bool connectedToHomeWifi = false;
-bool connectedToPhoneApp = false;
+bool connectedToPhoneApp = true;
 String macID = ""; //This is used as the OutSmart ID.
 
 // CONTROLLING PINS
-int outlet1 = D0, outlet2 = D1, outlet3 = D2, outlet4 = D3;
+int outlet1 = D1, outlet2 = D2, outlet3 = D5, outlet4 = D6;
 
 // Status Variables
 int status1 = 0, status2 = 0, status3 = 0, status4 = 0;
@@ -31,6 +31,8 @@ int status1 = 0, status2 = 0, status3 = 0, status4 = 0;
 void setup() {
 	// Open serial communications
 	Serial.begin(9600);
+
+	setUpPins();
 
 	//Set up access point
 	setupAPWiFi();
@@ -131,24 +133,28 @@ void loop() {
 			if (toggle == "on1")
 			{		
 				digitalWrite(outlet1, 1);   // switch on 
+				Serial.println("turned 1 on");
 			}
-			else if (toggle == "Off1")
+			else if (toggle == "off1")
 			{
 				
 				digitalWrite(outlet1, 0);   // switch off
+				Serial.println("turned 1 off");
 
 			}
 			else if (toggle == "on2")
 			{
 				
+
 				digitalWrite(outlet2, 1);   //// switch on 
+				Serial.println("turned 2 on");
 
 			}
 			else if (toggle == "off2")
 			{
 				
 				digitalWrite(outlet2,0);   // switch off
-
+				Serial.println("turned 2 off");
 			}
 			else if (toggle == "on3")
 			{
@@ -165,7 +171,7 @@ void loop() {
 				digitalWrite(outlet4, 1);   // switch on 
 
 			}
-			else if (toggle == "Off4")
+			else if (toggle == "off4")
 			{
 				digitalWrite(outlet4, 0);   // switch off
 
@@ -174,6 +180,7 @@ void loop() {
 			else{
 				// Do nothing for now. We will send the updated status of all outlets anyways. 
 				// We respond to this request as an acknowledgment too.
+				Serial.println("Did not toggle any");
 			}
 
 			//Read the current status of all outlets.
@@ -198,7 +205,32 @@ void loop() {
 	}
 	char remoteIP[15] = "192.168.4.2";
 
-	///sendUDPPacket("Hello", remoteIP, remoteIPPort);
+	
+	if (connectedToPhoneApp){
+		//Reserve memory space
+		StaticJsonBuffer<250> jsonBufferSend;
+
+		//status1 = 1;
+
+		//Build object tree in memory
+		JsonObject& root = jsonBufferSend.createObject();
+		root["type"] = "PORE";
+		root["t"] = String(10000);
+		root["v"] = String(120);
+
+		root["c1"] = String(outlet1); root["c2"] = String(outlet2);
+		root["c3"] = String(outlet3); root["c4"] = String(outlet4);
+		root["s1"] = String(status1); root["s2"] = String(status2);
+		root["s3"] = String(status3); root["s4"] = String(status4);
+		root["id"] = String(macID);
+		char messageToSend[200];
+		root.printTo(messageToSend, sizeof(messageToSend));
+		String toSendData = messageToSend;
+
+		//send UDP Packet
+		sendUDPPacket(toSendData, remoteIP,remoteIPPort);
+	}
+
 	Serial.println(".");
 	delay(1000);
 }
@@ -284,4 +316,13 @@ void sendUDPPacket(String messageToSend, char remoteIP[15], int port)
 	Udp.beginPacket(remoteIP, port);
 	Udp.write(ReplyBuffer);
 	Udp.endPacket();
+}
+
+void setUpPins()
+{
+	// sets controlling pins as outputs
+	pinMode(outlet1, OUTPUT);
+	pinMode(outlet2, OUTPUT);
+	pinMode(outlet3, OUTPUT);
+	pinMode(outlet4, OUTPUT);
 }

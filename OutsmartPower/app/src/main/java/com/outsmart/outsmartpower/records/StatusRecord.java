@@ -45,7 +45,7 @@ public class StatusRecord extends BaseRecord{
             else
                 status4 = false;
 
-            smartOutletID = Integer.parseInt(json.getString(Constants.ID_CONTENT));
+            smartOutletID = (json.getString(Constants.ID_CONTENT));
         }
         catch (Exception e){
             e.printStackTrace();

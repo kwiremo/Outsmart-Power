@@ -12,6 +12,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.widget.ExploreByTouchHelper;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -28,7 +29,8 @@ import com.outsmart.outsmartpower.managers.ConnectionManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.network.UDPManager;
 import com.outsmart.outsmartpower.network.UDPServer;
-import com.outsmart.outsmartpower.network.records.CredentialBaseRecord;
+import com.outsmart.outsmartpower.records.ControlRecord;
+import com.outsmart.outsmartpower.records.CredentialBaseRecord;
 import com.outsmart.outsmartpower.records.EchoRequestRecord;
 import com.outsmart.outsmartpower.ui.DisplayPowerFragment;
 import com.outsmart.outsmartpower.ui.UIManager;
@@ -64,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
     String ssid;
     String password;
     String ipAddress;
-    int smart_Outlet_Device_ID;
+    String smart_Outlet_Device_ID;
     String homeWifiName;
     String homeWifiPassword;
     List<ScanResult> scannedResults;
@@ -90,7 +92,9 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                UDPManager.getInstance().sendPacket(new EchoRequestRecord(), Constants.REMOTE_IP_ADDRESS);
+                //UDPManager.getInstance().sendPacket(new EchoRequestRecord(), Constants.REMOTE_IP_ADDRESS);
+                UDPManager.getInstance().sendPacket(new ControlRecord("on2"),
+                        Constants.REMOTE_IP_ADDRESS);
             }
         });
 
@@ -214,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
     }
 
     @Override
-    public void onOutsmartCredReceived(int id, String ip) {
+    public void onOutsmartCredReceived(String id, String ip) {
         smart_Outlet_Device_ID = id;
         ipAddress = ip;
 
