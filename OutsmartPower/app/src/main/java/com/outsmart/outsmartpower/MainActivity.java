@@ -28,7 +28,7 @@ import com.outsmart.outsmartpower.managers.ConnectionManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.network.UDPManager;
 import com.outsmart.outsmartpower.network.UDPServer;
-import com.outsmart.outsmartpower.network.records.CredentialBaseRecord;
+import com.outsmart.outsmartpower.records.CredentialBaseRecord;
 import com.outsmart.outsmartpower.records.EchoRequestRecord;
 import com.outsmart.outsmartpower.ui.DisplayPowerFragment;
 import com.outsmart.outsmartpower.ui.UIManager;
@@ -90,7 +90,8 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                UDPManager.getInstance().sendPacket(new EchoRequestRecord(), Constants.REMOTE_IP_ADDRESS);
+                //UDPManager.getInstance().sendPacket(new EchoRequestRecord(), Constants.REMOTE_IP_ADDRESS);
+                UDPManager.getInstance().sendPacket(new CredentialBaseRecord("eaglesnet",""),Constants.REMOTE_IP_ADDRESS);
             }
         });
 
@@ -269,7 +270,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
                 NetworkInfo networkInfo = cm.getActiveNetworkInfo();
 
                 if (networkInfo != null && networkInfo.isConnected()) {
-                    // Wifi is connected
+                    //Wifi is connected
                     WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
                     WifiInfo wifiInfo = wifiManager.getConnectionInfo();
                     String ssid = wifiInfo.getSSID();
@@ -279,7 +280,10 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
                         //they are added. Change it to equals if you can fix it.
                         Log.e(TAG, " -- Wifi connected --- " + " SSID " + ssid);
                         CredentialBaseRecord credentialRecord = new CredentialBaseRecord(homeWifiName, homeWifiPassword);
-                        udpManager.sendPacket(credentialRecord, Constants.REMOTE_IP_ADDRESS);
+                        for(int i = 0; i <3; i++){
+                            udpManager.sendPacket(credentialRecord, Constants.REMOTE_IP_ADDRESS);
+
+                        }
                         unregisterReceiver(received);
                     }
 
@@ -288,7 +292,10 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
                         SmartOutlet deviceInfo = SmartOutletManager.getInstance().getActiveSmartOutlet();
                         if(deviceInfo != null){
                             String ipAddress =deviceInfo.getIpAddress();
-                            udpManager.sendPacket(new EchoRequestRecord(), ipAddress);
+                            for(int i = 0; i<3;i++){
+                                udpManager.sendPacket(new EchoRequestRecord(), ipAddress);
+
+                            }
                             unregisterReceiver(received);
                         }
                     }

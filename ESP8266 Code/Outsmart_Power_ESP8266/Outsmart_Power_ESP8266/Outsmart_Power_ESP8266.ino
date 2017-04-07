@@ -8,6 +8,8 @@ Author:	Rene Moise Kwibuka
 #include <ESP8266WiFi.h>
 #include <WiFiUDP.h>
 #include <ArduinoJson.h>
+#include <SoftwareSerial.h>
+#include <FS.h>
 
 //ACCESS POINT DEFINITIONS.
 const char WIFI_AP_PASSWORD[] = "12345678";
@@ -26,16 +28,47 @@ int outlet1 = D0, outlet2 = D1, outlet3 = D2, outlet4 = D3;
 // Status Variables
 int status1 = 0, status2 = 0, status3 = 0, status4 = 0;
 
+//File system variables
+File f; //The file that will be opened and editied
+bool firstTimeWriting = true; //If this is the first time we've written to the file
+Dir dir; //Directory to find the file in
+
+//Software Serial for serial monitor
+SoftwareSerial mySerial(D3, D4);
+
+//Time variables and constants
+IPAddress timeServerIP; // time.nist.gov NTP server address
+WiFiUDP timeUdp;
+int localTimePort = 2391;
+const char* ntpServerName = "time.nist.gov";
+String epochString;
+const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
+byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+unsigned long epoch; //Time value in UNIX format
+unsigned long lastEpoch; //The last value in case we don't get time back from server
 
 // the setup function runs once when you press reset or power the board
 void setup() {
 	// Open serial communications
 	Serial.begin(9600);
+  Serial.setTimeout(900);
+  mySerial.begin(9600);
+
+  //SPIFFS setup
+  SPIFFS.begin();
+  // Next lines have to be done ONLY ONCE!!!!!When SPIFFS is formatted ONCE you can comment these lines out!!
+  //Serial.println("Please wait 30 secs for SPIFFS to be formatted");
+  //SPIFFS.format();
+  //Serial.println("Spiffs formatted");
 
 	//Set up access point
 	setupAPWiFi();
 	
 	Udp.begin(localUdpPort);
+  timeUdp.begin(localTimePort);
+
+  //Alert that setup is complete
+  mySerial.println("Ready!");
 }
 
 // the loop function runs over and over again forever
@@ -50,9 +83,9 @@ void loop() {
 		IPAddress remoteIP = Udp.remoteIP();
 		String packetReceived = "";
 		packetReceived = receiveUDPPacket(noBytes);
-		Serial.println("Received a packet!");
+		mySerial.println("Received a packet!");
 
-		Serial.println(packetReceived);
+		mySerial.println(packetReceived);
 
 		//JSON PROCESSING
 		StaticJsonBuffer<200> jsonReceivedBuffer;
@@ -61,7 +94,7 @@ void loop() {
 
 		if (!root.success())
 		{
-			Serial.println("parseObject() failed");
+			mySerial.println("parseObject() failed");
 			return;
 		}
 
@@ -80,14 +113,14 @@ void loop() {
 				wifiName.toCharArray(wifiNameChar, wifiName.length() + 1);
 				password.toCharArray(passwordChar, password.length() + 1);
 
-				Serial.println(wifiNameChar);
-				Serial.println(passwordChar);
+				mySerial.println(wifiNameChar);
+				mySerial.println(passwordChar);
 
 				//Start STA Connection
 				if (setupSTAMode(wifiNameChar, passwordChar))
 				{
 					connectedToHomeWifi = true;
-					Serial.println(WiFi.localIP().toString());
+					mySerial.println(WiFi.localIP().toString());
 				}
 			}
 
@@ -199,7 +232,11 @@ void loop() {
 	char remoteIP[15] = "192.168.4.2";
 
 	///sendUDPPacket("Hello", remoteIP, remoteIPPort);
-	Serial.println(".");
+
+  //Get the power measurment data and store it
+  retrieveAndStorePowerInfo("f.txt");
+  
+	mySerial.println(".");
 	delay(1000);
 }
 
@@ -236,7 +273,7 @@ String receiveUDPPacket(int maxSize)
 	if (len > 0) {
 		packetBuffer[len] = 0;
 	}
-	Serial.print("String Received: ");
+	mySerial.print("String Received: ");
 	//Serial.println(packetBuffer);
 	String packet = packetBuffer;
 	return packet;
@@ -253,7 +290,7 @@ bool setupSTAMode(char wifiName[], char password[])
 	while (WiFi.status() != WL_CONNECTED)
 	{
 		delay(500);
-		Serial.print(".");
+		mySerial.print(".");
 		tries++;
 		if (tries > 30)
 		{
@@ -285,3 +322,159 @@ void sendUDPPacket(String messageToSend, char remoteIP[15], int port)
 	Udp.write(ReplyBuffer);
 	Udp.endPacket();
 }
+
+//Method for getting NTP Time from internet
+void getTimeFromInternet()
+{
+  //get a random server from the pool
+  WiFi.hostByName(ntpServerName, timeServerIP);
+
+  sendNTPpacket(timeServerIP); // send an NTP packet to a time server
+
+    // wait to see if a reply is available
+    delay(175);
+
+  int cb = timeUdp.parsePacket();
+  if (!cb) {
+    mySerial.println("Time fail");
+  }
+  else {
+    // We've received a packet, read the data from it
+    timeUdp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
+
+                         //the timestamp starts at byte 40 of the received packet and is four bytes,
+                         // or two words, long. First, esxtract the two words:
+    unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+    unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+
+    // combine the four bytes (two words) into a long integer
+    // this is NTP time (seconds since Jan 1 1900):
+    unsigned long secsSince1900 = highWord << 16 | lowWord;
+
+    // now convert NTP time into everyday time:
+    // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+    const unsigned long seventyYears = 2208988800UL;
+    lastEpoch = epoch;
+    epoch = secsSince1900 - seventyYears;
+    
+    epochString = String(epoch);
+    mySerial.println(epoch);
+  }
+}
+
+// send an NTP request to the time server at the given address (for time retreival)
+unsigned long sendNTPpacket(IPAddress& address)
+{
+  ///Serial.println("sending NTP packet...");
+  // set all bytes in the buffer to 0
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  // Initialize values needed to form NTP request
+  // (see URL above for details on the packets)
+  packetBuffer[0] = 0b11100011;   // LI, Version, Mode
+  packetBuffer[1] = 0;     // Stratum, or type of clock
+  packetBuffer[2] = 6;     // Polling Interval
+  packetBuffer[3] = 0xEC;  // Peer Clock Precision
+               // 8 bytes of zero for Root Delay & Root Dispersion
+  packetBuffer[12] = 49;
+  packetBuffer[13] = 0x4E;
+  packetBuffer[14] = 49;
+  packetBuffer[15] = 52;
+
+  // all NTP fields have been given values, now
+  // you can send a packet requesting a timestamp:
+  timeUdp.beginPacket(address, 123); //NTP requests are to port 123
+  timeUdp.write(packetBuffer, NTP_PACKET_SIZE);
+  timeUdp.endPacket();
+}
+
+//Method to get power data from ATMega 328P and store it
+void retrieveAndStorePowerInfo(String path){
+
+//Get time from internet if we're connected to the internet
+  if(connectedToHomeWifi){
+    getTimeFromInternet();
+
+    //If time value failed to update it, increment it
+    if (lastEpoch == epoch) {
+      epoch += 1;
+      lastEpoch += 1;
+      epochString = (String)epoch;
+    }
+  }
+
+  //Open the file for writing if first time opening
+  if (firstTimeWriting) {
+    f = SPIFFS.open(path, "w");
+    firstTimeWriting = false;
+  }
+  //Open the file for appending if first time opening
+  else {
+    // open file for writing
+    f = SPIFFS.open(path, "a");
+  }
+
+  if (!f) {
+    mySerial.println("file open failed");
+  }
+  
+  mySerial.println("====== Writing to SPIFFS file =========");
+  // write 10 strings to file
+
+  //Reserve memory space
+  StaticJsonBuffer<200> jsonBuffer;
+  //char temp[100]; //= "{\"t\":\"-7616\",\"v\":\"0.00\",\"c1\":\"0.05\",\"c2\":\"4.01\",\"c3\":\"8.66\",\"c4\":\"12.95\"}";
+  int incomingSerialDataIndex = 0;
+
+
+  bool read = false;
+  String temp;
+  while ( Serial.available()) {
+    mySerial.println("Got data");
+    if ((temp=Serial.readStringUntil('\n')) != 0) {
+      
+      //Serial.print(i);
+
+      read = true;
+      //i++;
+    }
+    else
+      mySerial.println("No string");
+  }
+  
+  mySerial.println(temp);
+    //Parse object received from 328P
+  JsonObject& root = jsonBuffer.parseObject(temp);
+
+  if (!root.success())
+  {
+    mySerial.println("parseObject() failed");
+    temp = " ";
+    return;
+  }
+
+  // Received in this form: {"t":"-7616","v":"0.00","c1":"0.05","c2":"4.01","c3":"8.66","c4":"12.95"}
+  float        current1 = root["c1"];
+  float        current2 = root["c2"];
+  float        current3 = root["c3"];
+  float        current4 = root["c4"];
+  float        voltage = root["v"];
+
+  //Store the power records
+  f.println(";V:" + (String)voltage + ",C1:" + (String)current1 + ",C2:" + (String)current2
+    + ",C3:" + (String)current3 + ",C4:" + (String)current4 + ",T:" + epochString);
+
+  /*StaticJsonBuffer<200> jsonBuffer1;
+  JsonObject& root1 = jsonBuffer1.createObject();
+  root1["v"] = voltage + .01;
+  root1["c1"] = current1 + .01;
+  root1["c2"] = current2 + .01;
+  root1["c3"] = current3 + .01;
+  root1["c4"] = current4 + .01;
+  root1["t"] = epochString;
+
+  root1.printTo(temp);*/
+  
+  //Close the file so it can be accessed by other methods
+  f.close();
+}
+

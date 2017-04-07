@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -25,6 +26,8 @@ import android.widget.Toast;
 import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
+import com.outsmart.outsmartpower.network.UDPManager;
+import com.outsmart.outsmartpower.records.CredentialBaseRecord;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -191,17 +194,23 @@ public class WifiListFragment extends android.app.ListFragment implements String
             setListAdapter(wifiListAdapter);
             //Lv.setAdapter(wifiListAdapter);
             Tv.setText("AVAILABLE WIFI");
+            //Switch to Smart Outlet network
+            //switchNetwork(broadSmartOutletNetw,broadSmartOutletNetwPassword);
         }
         else if(hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
             homeWifiPassword = password;
             hasEnteredHomeWifiPassword = true;
-
             onReceivedPreferredWifis receivedPreferredWifis = (onReceivedPreferredWifis) getActivity();
-            if(receivedPreferredWifis != null){
+            if(receivedPreferredWifis != null) {
+                // Send Credential Packet to Smart Outlet being setup
+                //UDPManager.getInstance().sendPacket(new CredentialBaseRecord(homeWifiName, homeWifiPassword), Constants.REMOTE_IP_ADDRESS);
+
                 receivedPreferredWifis.receivePreferredWifis(homeWifiName, broadSmartOutletNetw, homeWifiPassword,
-                        broadSmartOutletNetwPassword, scannedResults);
+                       broadSmartOutletNetwPassword, scannedResults);
                 baseActivity.unregisterReceiver(wifiScanReceiver);
                 baseActivity.getFragmentManager().popBackStack();
+                //Switch to Smart Outlet Network
+                //switchNetwork(homeWifiName,homeWifiPassword);
             }
         }
     }
@@ -325,5 +334,24 @@ public class WifiListFragment extends android.app.ListFragment implements String
                 .setNegativeButton("Cancel", okListener)
                 .create()
                 .show();
+    }
+
+    //Method to automatically switch networks
+    private void switchNetwork(String ssidToSwitchTo, String passwordToUse){
+        WifiConfiguration conf = new WifiConfiguration();
+        conf.SSID = "\"" + ssidToSwitchTo + "\"";
+        conf.preSharedKey = "\"" + passwordToUse + "\"";
+        WifiManager wifiManager = (WifiManager)getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        wifiManager.addNetwork(conf);
+        List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
+        for( WifiConfiguration i : list ) {
+            if(i.SSID != null && i.SSID.equals("\"" + ssidToSwitchTo + "\"")) {
+                wifiManager.disconnect();
+                wifiManager.enableNetwork(i.networkId, true);
+                wifiManager.reconnect();
+
+                break;
+            }
+        }
     }
 }

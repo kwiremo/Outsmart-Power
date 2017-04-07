@@ -5,6 +5,7 @@ import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.records.StatusRecord;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
@@ -34,6 +35,7 @@ public class SmartOutletManager extends Observable implements Observer{
     DatabaseOperations databaseOperations;
 
     private SmartOutletManager() {
+        smartOutletList = new ArrayList<SmartOutlet>();
     }
 
     //Get the smart outlet informations.
@@ -57,14 +59,17 @@ public class SmartOutletManager extends Observable implements Observer{
             //Save the database reference
             databaseOperations = DatabaseOperations.getInstance();
 
-            //Initialize SettingsRecord with data from the database
-            smartOutletList = databaseOperations.getSmartOutlerInfo();
+            //Initialize SettingsRecord with data from the databasesmartOutletList = databaseOperations.getSmartOutlerInfo();
 
             //Initialize smartOutlet
             smart_OutletConnected = false;
 
-            activeSmartOutlet = smartOutletList.get(0);
-
+            if(smartOutletList.size() > 0) {
+                activeSmartOutlet = smartOutletList.get(0);
+            }
+            else{
+                //TODO create alternative
+            }
             //Add the main page observer.
             notifyObservers();
         }

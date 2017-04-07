@@ -16,7 +16,7 @@ import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.network.UDPManager;
-import com.outsmart.outsmartpower.network.records.ControlRecord;
+import com.outsmart.outsmartpower.records.ControlRecord;
 import com.outsmart.outsmartpower.records.StatusRecord;
 
 import java.util.Observable;
