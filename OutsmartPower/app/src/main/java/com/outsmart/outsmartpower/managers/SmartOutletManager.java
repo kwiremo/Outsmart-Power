@@ -1,10 +1,15 @@
 package com.outsmart.outsmartpower.managers;
 
+import android.app.Activity;
+
 import com.outsmart.outsmartpower.DatabaseOperations;
+import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.Support.BootlLoader;
+import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.records.PowerRecord;
 import com.outsmart.outsmartpower.records.StatusRecord;
+import com.outsmart.outsmartpower.ui.DisplayPowerFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +26,10 @@ public class SmartOutletManager extends Observable implements Observer{
     }
     private SmartOutlet activeSmartOutlet;
     private boolean smart_OutletConnected;
+    /**
+     * This mainactivity stores a reference to the mainActivity.
+     */
+    private Activity mainActivity;
 
     /**
      * The SmartOutlet class represents info for a single remote outsmart device that is
@@ -36,7 +45,7 @@ public class SmartOutletManager extends Observable implements Observer{
     DatabaseOperations databaseOperations;
 
     private SmartOutletManager() {
-        smartOutletList = new ArrayList<SmartOutlet>();
+        smartOutletList = new ArrayList<>();
     }
 
     //Get the smart outlet informations.
@@ -57,6 +66,8 @@ public class SmartOutletManager extends Observable implements Observer{
     public void update(Observable observable, Object o) {
         if(observable.getClass() == BootlLoader.class)
         {
+            //Initialize mainActivity.
+            mainActivity = ParentActivity.getParentActivity();
             //Save the database reference
             databaseOperations = DatabaseOperations.getInstance();
 
@@ -65,19 +76,39 @@ public class SmartOutletManager extends Observable implements Observer{
             //Initialize smartOutlet
             smart_OutletConnected = false;
 
-            //activeSmartOutlet = smartOutletList.get(0);
+            /**
+             * This will check to see if there is an active outsmart. if there is it will update
+             * both the screen and the activesmart outlet field.
+             */
+            smartOutletList = databaseOperations.getSmartOutlerInfo();
+            if(smartOutletList.size() > 0) {
+                String activeID = databaseOperations.getActiveSmartOutlet();
+                for(int i = 0; i<smartOutletList.size(); i++){
+                    if(smartOutletList.get(i).getSmart_Outlet_Device_ID().equals( activeID)){
+                        activeSmartOutlet = smartOutletList.get(i);
+                        updateUITitle(activeSmartOutlet.getNickname());
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
-            //Add the main page observer.
-            notifyObservers();
+    private void updateUITitle(String nickname) {
+        DisplayPowerFragment displayPowerFragment = (DisplayPowerFragment) mainActivity.
+                getFragmentManager().findFragmentById(R.id.wifiListFragmentContainer);
+
+        if(displayPowerFragment != null){
+            displayPowerFragment.updateSmartOutletTitle(nickname);
         }
     }
 
     public void saveSmartOutlet(SmartOutlet info){
         activeSmartOutlet = info;
         databaseOperations.addSmartOutletInfo(info);
+        databaseOperations.updateActiveSmartOutlet(info.getSmart_Outlet_Device_ID());
         smartOutletList.add(info);
-        updateObservers();
-        //TODO: Make sure to update the list of available smart Outlet.
+        updateUITitle(info.getNickname());
     }
 
     public void setActiveSmartOutlet(SmartOutlet activeSmartOutlet) {
@@ -113,6 +144,18 @@ public class SmartOutletManager extends Observable implements Observer{
     public void removeOutlet(String broadSmartOutletNetw){
         databaseOperations.removeSmartOutlet(broadSmartOutletNetw);
         smartOutletList = databaseOperations.getSmartOutlerInfo();
+        if(broadSmartOutletNetw.equals(activeSmartOutlet.getNickname())){
+            databaseOperations.removeActiveSmartOutlet(activeSmartOutlet.getSmart_Outlet_Device_ID());
+        }
+
+        if(smartOutletList.size() > 0){
+            activeSmartOutlet = smartOutletList.get(smartOutletList.size()-1);
+            databaseOperations.updateActiveSmartOutlet(activeSmartOutlet.getSmart_Outlet_Device_ID());
+            updateUITitle(activeSmartOutlet.getNickname());
+        }
+        else {
+            //updateUITitle("--");
+        }
     }
 
     /**
@@ -123,8 +166,12 @@ public class SmartOutletManager extends Observable implements Observer{
      */
     public void receiveStatusRecord(StatusRecord record){
         if(activeSmartOutlet.getSmart_Outlet_Device_ID() == record.getSmartOutletID()) {
-            setChanged();
-            notifyObservers(record);
+            DisplayPowerFragment displayPowerFragment = (DisplayPowerFragment) mainActivity.
+                    getFragmentManager().findFragmentById(R.id.wifiListFragmentContainer);
+
+            if(displayPowerFragment != null){
+                displayPowerFragment.updateStatus(record);
+            }
         }
         else
         {
@@ -143,12 +190,31 @@ public class SmartOutletManager extends Observable implements Observer{
      * Also, the record is saved in the database.
      * @param record
      */
-    public void receivePowerRecord(PowerRecord record){
-        //if(record.getSmartOutletId() == activeSmartOutlet.getSmart_Outlet_Device_ID()){
-            notifyObservers(record);
-        //}
+    public void receivePowerRecord(PowerRecord record) {
+        if (activeSmartOutlet != null) {
+            if (record.getSmartOutletId().equals( activeSmartOutlet.getSmart_Outlet_Device_ID())) {
+                DisplayPowerFragment displayPowerFragment = (DisplayPowerFragment) mainActivity.
+                        getFragmentManager().findFragmentById(R.id.wifiListFragmentContainer);
 
+                if (displayPowerFragment != null) {
+                    displayPowerFragment.updatePowerRecords(record);
+                }
+            }
+        }
         //Save the record in the database
         databaseOperations.savePowerRecord(record);
+    }
+
+    /**
+     * This function is called by the graph activity. It requests all the records that fall in the
+     * specified range. For example, the graph activity might request all records between now and
+     * today at midnight. Or all records between last week and today.
+     * @param startSeconds
+     * @param endSeconds
+     * @return
+     */
+    public ArrayList<PowerRecord> getRecordsInRange(int startSeconds, int endSeconds){
+        return databaseOperations.getAllRecordsInRange(
+                activeSmartOutlet.getSmart_Outlet_Device_ID(),startSeconds, endSeconds);
     }
 }

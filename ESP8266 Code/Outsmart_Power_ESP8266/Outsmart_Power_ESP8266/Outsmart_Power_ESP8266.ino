@@ -17,9 +17,10 @@ const char WIFI_AP_PASSWORD[] = "12345678";
 //NETWORK DEFINITIONS
 int localUdpPort = 2390;
 int remoteIPPort = 4000;
+IPAddress remoteIP;
 WiFiUDP Udp;
 bool connectedToHomeWifi = false;
-bool connectedToPhoneApp = true;
+bool connectedToPhoneApp = false;
 String macID = ""; //This is used as the OutSmart ID.
 
 // CONTROLLING PINS
@@ -46,7 +47,7 @@ const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of th
 byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
 unsigned long epoch; //Time value in UNIX format
 unsigned long lastEpoch; //The last value in case we don't get time back from server
-
+double current1 = 0, current2 = 0, current3 = 0, current4 = 0;
 // the setup function runs once when you press reset or power the board
 void setup() {
 	// Open serial communications
@@ -82,12 +83,12 @@ void loop() {
 	if (noBytes)
 	{
 
-		IPAddress remoteIP = Udp.remoteIP();
+		remoteIP = Udp.remoteIP();
 		String packetReceived = "";
 		packetReceived = receiveUDPPacket(noBytes);
-		mySerial.println("Received a packet!");
+		Serial.println("Received a packet!");
 
-		mySerial.println(packetReceived);
+		Serial.println(packetReceived);
 
 		//JSON PROCESSING
 		StaticJsonBuffer<200> jsonReceivedBuffer;
@@ -96,7 +97,7 @@ void loop() {
 
 		if (!root.success())
 		{
-			mySerial.println("parseObject() failed");
+			Serial.println("parseObject() failed");
 			return;
 		}
 
@@ -115,15 +116,21 @@ void loop() {
 				wifiName.toCharArray(wifiNameChar, wifiName.length() + 1);
 				password.toCharArray(passwordChar, password.length() + 1);
 
-				mySerial.println(wifiNameChar);
-				mySerial.println(passwordChar);
+				Serial.println(wifiNameChar);
+				Serial.println(passwordChar);
 
-				//Start STA Connection
+				//Start STA Connection if not already connected.
 				if (setupSTAMode(wifiNameChar, passwordChar))
 				{
+					if (firstTimeWriting){
+						//getTimeFromInternet();
+						firstTimeWriting = false;
+					}
 					connectedToHomeWifi = true;
-					mySerial.println(WiFi.localIP().toString());
+					Serial.println("Internet is successfully connected!");
+					Serial.println(WiFi.localIP().toString());
 				}
+	
 			}
 
 			//Reserve memory space
@@ -150,7 +157,7 @@ void loop() {
 			JsonObject& root = jsonBufferSend.createObject();
 			root["type"] = "REPL";
 			root["data"] = "I am here!";
-			root["id"] = String(macID);
+			root["id"] = macID;
 			char messageToSend[50];
 			root.printTo(messageToSend, sizeof(messageToSend));
 			String toSendData = messageToSend;
@@ -165,48 +172,46 @@ void loop() {
 
 			if (toggle == "on1")
 			{		
-				digitalWrite(outlet1, 1);   // switch on 
+				digitalWrite(outlet1, 0);   // switch on 
 				Serial.println("turned 1 on");
 			}
 			else if (toggle == "off1")
 			{
 				
-				digitalWrite(outlet1, 0);   // switch off
+				digitalWrite(outlet1, 1);   // switch off
 				Serial.println("turned 1 off");
 
 			}
 			else if (toggle == "on2")
 			{
-				
-
-				digitalWrite(outlet2, 1);   //// switch on 
+				digitalWrite(outlet2, 0);   //// switch on 
 				Serial.println("turned 2 on");
 
 			}
 			else if (toggle == "off2")
 			{
 				
-				digitalWrite(outlet2,0);   // switch off
+				digitalWrite(outlet2,1);   // switch off
 				Serial.println("turned 2 off");
 			}
 			else if (toggle == "on3")
 			{
-				digitalWrite(outlet3,1);   // // switch on 
+				digitalWrite(outlet3,0);   // // switch on 
 
 			}
 			else if (toggle == "off3")
 			{
-				digitalWrite(outlet3, 0);   // switch off
+				digitalWrite(outlet3, 1);   // switch off
 
 			}
 			else if (toggle == "on4")
 			{
-				digitalWrite(outlet4, 1);   // switch on 
+				digitalWrite(outlet4, 0);   // switch on 
 
 			}
 			else if (toggle == "off4")
 			{
-				digitalWrite(outlet4, 0);   // switch off
+				digitalWrite(outlet4, 1);   // switch off
 
 			}
 		
@@ -215,58 +220,53 @@ void loop() {
 				// We respond to this request as an acknowledgment too.
 				Serial.println("Did not toggle any");
 			}
-
-			//Read the current status of all outlets.
-			status1 = digitalRead(outlet1);
-			status2 = digitalRead(outlet2);
-			status3 = digitalRead(outlet3);
-			status4 = digitalRead(outlet4);
-			
-			//Create a json to send.
-			root["type"] = "CONT";
-			root["s1"] = String(status1); root["s2"] = String(status2);
-			root["s3"] = String(status3); root["s4"] = String(status4);
-			root["id"] = String(macID);
-			char messageToSend[200];
-			root.printTo(messageToSend, sizeof(messageToSend));
-			String toSendData = messageToSend;
-
-			//send UDP Packet announcing status of every packet.
-			sendUDPPacket(toSendData, remoteIP, remoteIPPort);
+		
+			sendStatusUpdate();
 		}
 
 	}
-	char remoteIP[15] = "192.168.4.2";
+	//char remoteIP[15] = "192.168.4.2";
 	
-	if (connectedToPhoneApp){
+	if (true){
+		//sendPowerRecords();
 		//Reserve memory space
-		StaticJsonBuffer<250> jsonBufferSend;
+		StaticJsonBuffer<300> jsonBufferSend;
 
 		//status1 = 1;
-
 		//Build object tree in memory
 		JsonObject& root = jsonBufferSend.createObject();
 		root["type"] = "PORE";
-		root["t"] = String(10000);
+		root["t"] = String(1491685038);
 		root["v"] = String(120);
 
-		root["c1"] = String(outlet1); root["c2"] = String(outlet2);
-		root["c3"] = String(outlet3); root["c4"] = String(outlet4);
+		root["c1"] = String(current1); root["c2"] = String(current1);
+		root["c3"] = String(current1); root["c4"] = String(current1);
 		root["s1"] = String(status1); root["s2"] = String(status2);
 		root["s3"] = String(status3); root["s4"] = String(status4);
-		root["id"] = String(macID);
+		root["id"] = macID;
 		char messageToSend[200];
 		root.printTo(messageToSend, sizeof(messageToSend));
 		String toSendData = messageToSend;
-
+		//Serial.println(toSendData);
+		current1 = current1 + .01;
+		current2 = current1 + .01;
+		current3 = current1 + .01;
+		current4 = current1 + .01;
 		//send UDP Packet
-		sendUDPPacket(toSendData, remoteIP,remoteIPPort);
+		sendUDPPacket(toSendData, remoteIP, remoteIPPort);
+		sendStatusUpdate();
 	}
 
   //Get the power measurment data and store it
-  retrieveAndStorePowerInfo("f.txt");
+  //retrieveAndStorePowerInfo("f.txt");
   
-	mySerial.println(".");
+	Serial.print("IP for remote host: ");
+	Serial.println(remoteIP);
+	Serial.println(WiFi.localIP().toString());
+
+	if (connectedToHomeWifi){
+		epoch++;
+	}
 	delay(1000);
 }
 
@@ -320,7 +320,7 @@ bool setupSTAMode(char wifiName[], char password[])
 	while (WiFi.status() != WL_CONNECTED)
 	{
 		delay(500);
-		mySerial.print(".");
+		Serial.print(".");
 		tries++;
 		if (tries > 30)
 		{
@@ -360,6 +360,78 @@ void setUpPins()
 	pinMode(outlet2, OUTPUT);
 	pinMode(outlet3, OUTPUT);
 	pinMode(outlet4, OUTPUT);
+
+	digitalWrite(outlet1, 1);
+	digitalWrite(outlet2, 1);
+	digitalWrite(outlet3, 1);
+	digitalWrite(outlet4, 1);
+}
+
+void sendStatusUpdate(){
+	//Reserve memory space
+	StaticJsonBuffer<200> jsonBufferSend;
+
+	//Build object tree in memory
+	JsonObject& root = jsonBufferSend.createObject();
+
+	//Read the current status of all outlets.
+	status1 = digitalRead(outlet1);
+	status2 = digitalRead(outlet2);
+	status3 = digitalRead(outlet3);
+	status4 = digitalRead(outlet4);
+
+	//Create a json to send.
+	root["type"] = "CONT";
+	root["s1"] = String(status1); root["s2"] = String(status2);
+	root["s3"] = String(status3); root["s4"] = String(status4);
+	root["id"] = macID;
+	char messageToSend[200];
+	root.printTo(messageToSend, sizeof(messageToSend));
+	String toSendData = messageToSend;
+
+	//send UDP Packet announcing status of every packet.
+	sendUDPPacket(toSendData, remoteIP, remoteIPPort);
+}
+
+void sendPowerRecords(){
+	  //Reserve memory space
+	  StaticJsonBuffer<250> jsonBuffer;
+	  //char temp[100]; //= "{\"t\":\"-7616\",\"v\":\"0.00\",\"c1\":\"0.05\",\"c2\":\"4.01\",\"c3\":\"8.66\",\"c4\":\"12.95\"}";
+	  bool read = false;
+	  String temp;
+	  while ( Serial.available()) {
+	    mySerial.println("Got data");
+	    if ((temp=Serial.readStringUntil('\n')) != 0) {
+	      
+	      //Serial.print(i);
+	
+	      read = true;
+	      //i++;
+	    }
+	    else
+	      mySerial.println("No string");
+	  }
+	  
+	  mySerial.println(temp);
+	    //Parse object received from 328P
+	  JsonObject& root = jsonBuffer.parseObject(temp);
+	
+	  if (!root.success())
+	  {
+	    mySerial.println("parseObject() failed");
+	    temp = " ";
+	    return;
+	  }
+
+	  root["t"] = String(epoch);
+	  root["id"] = macID;
+	  root["type"] = "PORE";
+	  char messageToSend[250];
+	  root.printTo(messageToSend, sizeof(messageToSend));
+	  String toSendData = messageToSend;
+
+	  //send UDP Packet
+	  sendUDPPacket(toSendData, remoteIP, remoteIPPort);
 }
 
 //Method for getting NTP Time from internet
@@ -421,99 +493,99 @@ unsigned long sendNTPpacket(IPAddress& address)
 
   // all NTP fields have been given values, now
   // you can send a packet requesting a timestamp:
-  timeUdp.beginPacket(address, 123); //NTP requests are to port 123
+  timeUdp.beginPacketMulticast(address, 123,WiFi.localIP()); //NTP requests are to port 123
   timeUdp.write(packetBuffer, NTP_PACKET_SIZE);
   timeUdp.endPacket();
 }
-
-//Method to get power data from ATMega 328P and store it
-void retrieveAndStorePowerInfo(String path){
-
-//Get time from internet if we're connected to the internet
-  if(connectedToHomeWifi){
-    getTimeFromInternet();
-
-    //If time value failed to update it, increment it
-    if (lastEpoch == epoch) {
-      epoch += 1;
-      lastEpoch += 1;
-      epochString = (String)epoch;
-    }
-  }
-
-  //Open the file for writing if first time opening
-  if (firstTimeWriting) {
-    f = SPIFFS.open(path, "w");
-    firstTimeWriting = false;
-  }
-  //Open the file for appending if first time opening
-  else {
-    // open file for writing
-    f = SPIFFS.open(path, "a");
-  }
-
-  if (!f) {
-    mySerial.println("file open failed");
-  }
-  
-  mySerial.println("====== Writing to SPIFFS file =========");
-  // write 10 strings to file
-
-  //Reserve memory space
-  StaticJsonBuffer<200> jsonBuffer;
-  //char temp[100]; //= "{\"t\":\"-7616\",\"v\":\"0.00\",\"c1\":\"0.05\",\"c2\":\"4.01\",\"c3\":\"8.66\",\"c4\":\"12.95\"}";
-  int incomingSerialDataIndex = 0;
-
-
-  bool read = false;
-  String temp;
-  while ( Serial.available()) {
-    mySerial.println("Got data");
-    if ((temp=Serial.readStringUntil('\n')) != 0) {
-      
-      //Serial.print(i);
-
-      read = true;
-      //i++;
-    }
-    else
-      mySerial.println("No string");
-  }
-  
-  mySerial.println(temp);
-    //Parse object received from 328P
-  JsonObject& root = jsonBuffer.parseObject(temp);
-
-  if (!root.success())
-  {
-    mySerial.println("parseObject() failed");
-    temp = " ";
-    return;
-  }
-
-  // Received in this form: {"t":"-7616","v":"0.00","c1":"0.05","c2":"4.01","c3":"8.66","c4":"12.95"}
-  float        current1 = root["c1"];
-  float        current2 = root["c2"];
-  float        current3 = root["c3"];
-  float        current4 = root["c4"];
-  float        voltage = root["v"];
-
-  //Store the power records
-  f.println(";V:" + (String)voltage + ",C1:" + (String)current1 + ",C2:" + (String)current2
-    + ",C3:" + (String)current3 + ",C4:" + (String)current4 + ",T:" + epochString);
-
-  /*StaticJsonBuffer<200> jsonBuffer1;
-  JsonObject& root1 = jsonBuffer1.createObject();
-  root1["v"] = voltage + .01;
-  root1["c1"] = current1 + .01;
-  root1["c2"] = current2 + .01;
-  root1["c3"] = current3 + .01;
-  root1["c4"] = current4 + .01;
-  root1["t"] = epochString;
-
-  root1.printTo(temp);*/
-  
-  //Close the file so it can be accessed by other methods
-  f.close();
-}
+//
+////Method to get power data from ATMega 328P and store it
+//void retrieveAndStorePowerInfo(String path){
+//
+////Get time from internet if we're connected to the internet
+//  if(connectedToHomeWifi){
+//    getTimeFromInternet();
+//
+//    //If time value failed to update it, increment it
+//    if (lastEpoch == epoch) {
+//      epoch += 1;
+//      lastEpoch += 1;
+//      epochString = (String)epoch;
+//    }
+//  }
+//
+//  //Open the file for writing if first time opening
+//  if (firstTimeWriting) {
+//    f = SPIFFS.open(path, "w");
+//    firstTimeWriting = false;
+//  }
+//  //Open the file for appending if first time opening
+//  else {
+//    // open file for writing
+//    f = SPIFFS.open(path, "a");
+//  }
+//
+//  if (!f) {
+//    mySerial.println("file open failed");
+//  }
+//  
+//  mySerial.println("====== Writing to SPIFFS file =========");
+//  // write 10 strings to file
+//
+//  //Reserve memory space
+//  StaticJsonBuffer<200> jsonBuffer;
+//  //char temp[100]; //= "{\"t\":\"-7616\",\"v\":\"0.00\",\"c1\":\"0.05\",\"c2\":\"4.01\",\"c3\":\"8.66\",\"c4\":\"12.95\"}";
+//  int incomingSerialDataIndex = 0;
+//
+//
+//  bool read = false;
+//  String temp;
+//  while ( Serial.available()) {
+//    mySerial.println("Got data");
+//    if ((temp=Serial.readStringUntil('\n')) != 0) {
+//      
+//      //Serial.print(i);
+//
+//      read = true;
+//      //i++;
+//    }
+//    else
+//      mySerial.println("No string");
+//  }
+//  
+//  mySerial.println(temp);
+//    //Parse object received from 328P
+//  JsonObject& root = jsonBuffer.parseObject(temp);
+//
+//  if (!root.success())
+//  {
+//    mySerial.println("parseObject() failed");
+//    temp = " ";
+//    return;
+//  }
+//
+//  // Received in this form: {"t":"-7616","v":"0.00","c1":"0.05","c2":"4.01","c3":"8.66","c4":"12.95"}
+//  float        current1 = root["c1"];
+//  float        current2 = root["c2"];
+//  float        current3 = root["c3"];
+//  float        current4 = root["c4"];
+//  float        voltage = root["v"];
+//
+//  //Store the power records
+//  f.println(";V:" + (String)voltage + ",C1:" + (String)current1 + ",C2:" + (String)current2
+//    + ",C3:" + (String)current3 + ",C4:" + (String)current4 + ",T:" + epochString);
+//
+//  /*StaticJsonBuffer<200> jsonBuffer1;
+//  JsonObject& root1 = jsonBuffer1.createObject();
+//  root1["v"] = voltage + .01;
+//  root1["c1"] = current1 + .01;
+//  root1["c2"] = current2 + .01;
+//  root1["c3"] = current3 + .01;
+//  root1["c4"] = current4 + .01;
+//  root1["t"] = epochString;
+//
+//  root1.printTo(temp);*/
+//  
+//  //Close the file so it can be accessed by other methods
+//  f.close();
+//}
 

@@ -21,7 +21,7 @@ public class StringInputDialog extends DialogFragment {
     private TextView passwordTV;
     private EditText passwordET;
     private Button passwordBTN;
-
+    private Button noPasswordCancelBTN;
     public String text;
 
     public Context context;
@@ -44,12 +44,20 @@ public class StringInputDialog extends DialogFragment {
         passwordTV = (TextView) rootView.findViewById(R.id.password_tv);
         passwordET = (EditText) rootView.findViewById(R.id.password_et);
         passwordBTN = (Button) rootView.findViewById(R.id.password_btn);
-
+        noPasswordCancelBTN = (Button) rootView.findViewById(R.id.NoPassCancelBTN);
         passwordBTN.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
                 onInputButtonClicked fragment = (onInputButtonClicked) getTargetFragment();
                 fragment.onFinishedEnteringInput(passwordET.getText().toString());
+                dismiss();
+            }
+        });
+        noPasswordCancelBTN.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                onInputButtonClicked fragment = (onInputButtonClicked) getTargetFragment();
+                fragment.onFinishedEnteringInput("");
                 dismiss();
             }
         });

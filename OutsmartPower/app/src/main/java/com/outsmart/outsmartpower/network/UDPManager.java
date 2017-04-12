@@ -2,12 +2,16 @@ package com.outsmart.outsmartpower.network;
 
 import android.os.AsyncTask;
 
+import android.os.Handler;
+import android.text.format.Time;
 import android.widget.Toast;
 
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
+import com.outsmart.outsmartpower.records.CredentialBaseRecord;
 import com.outsmart.outsmartpower.records.RecordInterface;
+import com.outsmart.outsmartpower.ui.UIManager;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -16,6 +20,8 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by Rene Moise on 1/14/2017.
@@ -53,6 +59,19 @@ public class UDPManager extends Observable implements Observer{
     //The port to send frames from
     private DatagramSocket receiveSocket;
 
+    /**
+     * This variable knows how many times it's been since we started sending packets to the remote
+     * since we received a setup packet. After 10 times, we notify the user of the failure to setup.
+     */
+    private int numberOfPacketsSent;
+
+    /**
+     * This timer is used to send packets every 2 or so seconds to the remote until we hear back
+     * from it.
+     */
+    Timer timer;
+
+
     //Private class that receives packets
     private class receiveUDPPacket extends AsyncTask<Object, Object, Object> {
 
@@ -65,7 +84,6 @@ public class UDPManager extends Observable implements Observer{
                     receiveSocket.receive(dp);
                     packetReceived = new String(packetBuffer, 0, dp.getLength());
                     publishProgress(packetReceived);
-                    //Thread.sleep(Constants.SERVER_SLEEP_TIME);
                 }
 
             } catch (Exception e) {
@@ -81,10 +99,8 @@ public class UDPManager extends Observable implements Observer{
         protected void onProgressUpdate(Object... values) {
             if (values[0] != null){
                 String updatePacket = values[0].toString();
-                Toast.makeText(ParentActivity.getParentActivity(), updatePacket,
-                        Toast.LENGTH_SHORT).show();
                 setChanged();
-                notifyObservers(values[0]);
+                notifyObservers(updatePacket);
             };
         }
 
@@ -110,17 +126,15 @@ public class UDPManager extends Observable implements Observer{
 
     //private constructor (singleton)
     private UDPManager() {
+        numberOfPacketsSent = 0;
     }
 
     @Override
     public void update(Observable o, Object arg) {
         //Once booted, initialize
         if(o.getClass().equals(BootlLoader.class)){
-
             startServer();
             addObserver(UDPServer.getOurInstance());
-
-            //TODO Add UDP client and server as observers to this
         }
     }
 
@@ -150,15 +164,13 @@ public class UDPManager extends Observable implements Observer{
         return serverRunning;
     }
 
-    public void stopServer()
-    {
+    public void stopServer() {
         serverRunning = false;
         receiveSocket.close();
         sendSocket.close();
     }
 
-    private void startServer()
-    {
+    private void startServer() {
         serverRunning = true;
         openSockets();
         new receiveUDPPacket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, receiveSocket);
@@ -166,7 +178,6 @@ public class UDPManager extends Observable implements Observer{
 
     //Method to send packets
     public void sendPacket(RecordInterface packetToSend, String ipAddress){
-
         String packetStringToSend = packetToSend.toJSONString();
         InetAddress IPAddress;
 
@@ -184,5 +195,45 @@ public class UDPManager extends Observable implements Observer{
         catch(Exception e){
             e.printStackTrace();//TODO implement exception
         }
+    }
+
+    public void startTimerSendingSetupPackets(final  RecordInterface packetToSend, final String ipAddress) {
+        timer = new Timer();
+        timer.schedule(new sendSetupPackets(packetToSend,ipAddress),0,1000);
+    }
+
+
+    /**
+     * This is run when a credential record or echo request record is to be sent during setup.
+     * We wil start sending it every other second until we hear back from the remote.
+     * If we receive a credential packet, we will stop a timer. If the timer runs out, we will
+     * notify the user that the setup was a failure.
+     */
+    class sendSetupPackets extends TimerTask {
+        RecordInterface packetToSend;
+        String ipAddress;
+        public sendSetupPackets(RecordInterface packetToSend, String ipAddress){
+            this.packetToSend = packetToSend;
+            this.ipAddress = ipAddress;
+        }
+        @Override
+        public void run() {
+            sendPacket(packetToSend,ipAddress);
+            numberOfPacketsSent++;
+            if(numberOfPacketsSent == 60){
+                stopTimer();
+            }
+            //UIManager.getInstance().disPlayMessage("Sent Setup!");
+        }
+    }
+
+    /**
+     * TODO: This is done solely to be called by the UDPServer if it receives a credential record.
+     * Once we move its functionality to this class, we won't need this function anymore.
+     * @return
+     */
+    public void stopTimer(){
+        timer.cancel();
+        numberOfPacketsSent = 0;
     }
 }

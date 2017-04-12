@@ -66,27 +66,11 @@ public class UIManager implements Observer,GetClickedItemListFragment.OnReceived
 
         if(observable.getClass().equals(BootlLoader.class))
         {
-            //TODO: Display them to the user.
-            //Access the outsmartList
-            smartOutletManager = SmartOutletManager.getInstance();
-            deviceInfos = smartOutletManager.getSmartOutletList();
-
-            //If there is no device info, display the setup layout.
-            if(deviceInfos.size() == 0){
-                //Display the setup page
-                //TOdO: Display the setup page
-            }
-            else
-            {
-                //Display a list of outsmartlist.
-                //TODO: Display a list of smartDevices.
-            }
         }
     }
 
     @Override
     public void receiveClickedItem(int chosenOutsmart) {
         smartOutletManager.setActiveSmartOutlet(deviceInfos.get(chosenOutsmart));
-        //TODO: Notify concerned parties.
     }
 }

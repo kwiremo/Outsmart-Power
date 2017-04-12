@@ -47,8 +47,6 @@ public class UDPServer extends Observable implements Observer{
     @Override
     public void update(Observable o, Object arg) {
 
-
-
         //If the UDPManager is notifying with a power record, this is for destined for the server
         if(o.getClass() == UDPManager.class && o != null){
             String dataReceived = arg.toString();
@@ -73,9 +71,13 @@ public class UDPServer extends Observable implements Observer{
                         if(reportOutsmartCred != null){
                             reportOutsmartCred.onOutsmartCredReceived(id, ipAdd);
                         }
+                        UDPManager.getInstance().stopTimer();
+
+                        //UDPManager.getInstance().startTimerSendingSetupPackets(new );
                         break;
                     case Constants.REPL_RECORD:
                         smartOutletManager.setSmart_OutletConnected(true);
+                        UDPManager.getInstance().stopTimer();
                         UIManager.getInstance().disPlayMessage("smart-outlet connected!");
                         break;
                     case Constants.CONT_RECORD:
@@ -98,4 +100,11 @@ public class UDPServer extends Observable implements Observer{
         }
     }
 
+    public void setupFailed(){
+        reportOutsmartCred reportOutsmartCred = (reportOutsmartCred)ParentActivity.
+                getInstance().getParentActivity();
+        if(reportOutsmartCred != null){
+            reportOutsmartCred.onOutsmartCredReceived("0", "0");
+        }
+    }
 }

@@ -28,6 +28,9 @@ public class DatabaseOperations extends SQLiteOpenHelper {
     }
     private static final int DATABASE_VERSION = 1;
     private SQLiteDatabase SQ;
+    //CREATE ACTIVE SMART OUTLET TABLE.
+    private String CREATE_ACTIVE_SMARTOUTLET_QUERRY = "CREATE TABLE "+ Constants.ACTIVE_SMAEROUTLET_TABLE_NAME + "(" +
+            Constants.SMART_OUTLET_ID + " CHARACTER(4))";
 
     //CREATE RECORD TABLE QUERRY.
     private String CREATE_RECORD_TABLE_QUERRY = "CREATE TABLE "+ Constants.RECORD_TABLE_NAME + "(" +
@@ -72,7 +75,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         db.execSQL(CREATE_RECORD_TABLE_QUERRY);
         db.execSQL(CREATE_OUTSMART_DEVICES_TABLE);
         db.execSQL(CREATE_SETTINGS_TABLE);
-
+        db.execSQL(CREATE_ACTIVE_SMARTOUTLET_QUERRY);
         //Insert default data in the settings table
         //SettingsRecord defaultRecord = new SettingsRecord(1,DATE_FORMAT.monthFirst,
                 //TIME_FORMAT.military,UNIT_PREFERENCE.Kwh);
@@ -142,10 +145,23 @@ public class DatabaseOperations extends SQLiteOpenHelper {
     public ArrayList<PowerRecord> getAllRecordsInRange(String smID, int startSeconds, int endSeconds)
     {
         ArrayList<PowerRecord> RecordList = new ArrayList<PowerRecord>();
+
+        /**
+         * This querry was supposed to be used below to filter only the data that fall in range of
+         * the specified seconds and that belongs to the specified ID. I used <= and =>; and BETWEEN;
+         * and IN to compare data but they all did not work. If they worked it would prevent the
+         * phone app to load all data to memory. But since I cannot to get it work, I will load all
+         * stored data and compare them using java rather than using sql.
         String selectQuery = "SELECT " + Constants.SECONDS + " , " + Constants.CURRENT_1 + " , " + Constants.CURRENT_2 + " , " +
-        Constants.CURRENT_3 + " , " +  Constants.CURRENT_4 + " , " + Constants.VOLTAGE + " FROM " + Constants.RECORD_TABLE_NAME +
-                " WHERE " + Constants.SMART_OUTLET_ID + "==" + smID + " AND " + Constants.SECONDS + " >= " + startSeconds
-                + " AND " + Constants.SECONDS + " <= " + endSeconds;
+        Constants.CURRENT_3 + " , " +  Constants.CURRENT_4 + " , " + Constants.VOLTAGE + " FROM " + Constants.RECORD_TABLE_NAME
+                +
+                " WHERE " + Constants.SMART_OUTLET_ID + "=='" + smID + "' AND " + Constants.SECONDS + " IN (" + startSeconds
+                + "," + endSeconds + ");";
+         **/
+
+        String selectQuery = "SELECT " + Constants.SECONDS + " , " + Constants.CURRENT_1 + " , " +
+                Constants.CURRENT_2 + " , " + Constants.CURRENT_3 + " , " +  Constants.CURRENT_4 +
+                " , " + Constants.VOLTAGE + " FROM " + Constants.RECORD_TABLE_NAME;
 
 
         SQLiteDatabase db = this.getWritableDatabase();
@@ -155,17 +171,19 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         if (cursor.moveToFirst()) {
             do {
                 DateManager recordTime = new DateManager(cursor.getInt(0));
-                double current_1 = Double.parseDouble(cursor.getString(1));
-                double current_2 = Double.parseDouble(cursor.getString(2));
-                double current_3 = Double.parseDouble(cursor.getString(3));
-                double current_4 = Double.parseDouble(cursor.getString(4));
-                double voltage = Double.parseDouble(cursor.getString(5));
+                if(recordTime.getDataRecordedSeconds() >= startSeconds &&
+                        recordTime.getDataRecordedSeconds() <= endSeconds) {
+                    double current_1 = Double.parseDouble(cursor.getString(1));
+                    double current_2 = Double.parseDouble(cursor.getString(2));
+                    double current_3 = Double.parseDouble(cursor.getString(3));
+                    double current_4 = Double.parseDouble(cursor.getString(4));
+                    double voltage = Double.parseDouble(cursor.getString(5));
 
 
-
-                PowerRecord contact = new PowerRecord(recordTime,current_1,current_2,current_3,
-                        current_4,voltage,smID);
-                RecordList.add(contact);
+                    PowerRecord powerRecord = new PowerRecord(recordTime, current_1, current_2, current_3,
+                            current_4, voltage, smID);
+                    RecordList.add(powerRecord);
+                }
             } while (cursor.moveToNext());
         }
         // return contact list
@@ -210,5 +228,60 @@ public class DatabaseOperations extends SQLiteOpenHelper {
 
         //TODO: Implement this to actually get these data from the database.
         return new SettingsRecord(1, DATE_FORMAT.dayFirst, TIME_FORMAT.military, UNIT_PREFERENCE.Kwh);
+    }
+
+    /**
+     * This functions adds, updates or remove an active smartoutlet.
+     */
+
+    /**
+     * SOmething very important to learn here. Notice that I call getActiveSmartOutlet() to see if
+     * there is any saved outlet. The purpose is if there is already an outlet, to just update it.
+     * When we call getActiveSmartOutlet, we open the database for edit. If we do this after opening
+     * it again in the following method, the exception is thrown because you can not have two
+     * objects opening the database for edit at the same time. Just placing it above re-opening it
+     * for edit fixed this problem that I was having.
+     * @param smID
+     */
+    public void updateActiveSmartOutlet(String smID){
+
+        String activeID = getActiveSmartOutlet();
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        if(activeID != "") {
+            db.execSQL("UPDATE " + Constants.ACTIVE_SMAEROUTLET_TABLE_NAME + "\n SET " + Constants.SMART_OUTLET_ID +
+                    " = '" + smID + "'");
+        }
+        else
+        {
+            ContentValues cv = new ContentValues( );
+            cv.put(Constants.SMART_OUTLET_ID, smID);
+            synchronized (db) {
+                db.insert(Constants.ACTIVE_SMAEROUTLET_TABLE_NAME, null, cv);
+            }
+        }
+        db.close();
+    }
+
+    public String getActiveSmartOutlet(){
+        String selectQuery = "SELECT " + Constants.SMART_OUTLET_ID + " FROM " + Constants.ACTIVE_SMAEROUTLET_TABLE_NAME;
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+        String smID = "";
+        // looping through all rows and adding to list
+        if (cursor.moveToFirst()) {
+            do {
+                smID= cursor.getString(0);
+            } while (cursor.moveToNext());
+        }
+        db.close();
+        return smID;
+    }
+
+    public void removeActiveSmartOutlet(String smID){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM " + Constants.ACTIVE_SMAEROUTLET_TABLE_NAME + "\n WHERE " + Constants.SMART_OUTLET_ID +
+                " == '" + smID + "'");
+        db.close();
     }
 }

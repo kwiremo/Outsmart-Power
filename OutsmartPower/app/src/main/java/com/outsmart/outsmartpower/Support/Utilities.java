@@ -15,6 +15,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -49,4 +50,9 @@ public class Utilities {
         }
         return null;
     }
+
+    /**
+     * The base date in seconds since 1970:
+     */
+    public static int getNowTimeInSeconds = (int)Calendar.getInstance().getTimeInMillis()/1000;
 }

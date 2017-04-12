@@ -6,6 +6,7 @@ import com.outsmart.outsmartpower.Support.Constants;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -24,8 +25,6 @@ import java.util.Locale;
  * HH:mm            military time.
  */
 public class DateManager extends Timestamp{
-
-
 
     private long milliseconds;
     private int dataRecordedSeconds;

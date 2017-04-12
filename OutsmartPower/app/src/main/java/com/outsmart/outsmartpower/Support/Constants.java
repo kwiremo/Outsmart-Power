@@ -18,6 +18,9 @@ public class Constants {
     public static int REMOTE_PORT = 2390;
     public static final String DATABASE_NAME = "outsmart";  //database name
 
+    //ACTIVE SMART OUTLET COLUMNS
+    public static final String ACTIVE_SMAEROUTLET_TABLE_NAME = "active_smartoutlet_table_name";
+
 
     //RECORD table COLUMNS
     public static final String RECORD_TABLE_NAME = "record_table_name";
@@ -97,4 +100,8 @@ public class Constants {
 
     public static final String IP_CONTENT = "ip";
     public static final String ID_CONTENT = "id";
+
+    //GRAPH CONSTANTS
+    public static String X_VALUES = "X_VALUES";
+    public static String Y_VALUES = "Y_VALUES";
 }

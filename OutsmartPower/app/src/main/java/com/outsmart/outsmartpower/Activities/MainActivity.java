@@ -1,4 +1,4 @@
-package com.outsmart.outsmartpower;
+package com.outsmart.outsmartpower.Activities;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
@@ -12,7 +12,6 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.widget.ExploreByTouchHelper;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -23,6 +22,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.outsmart.outsmartpower.R;
+import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.managers.ConnectionManager;
@@ -81,22 +83,21 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         //Start display Power Fragment
         fragmentTransaction.replace(R.id.wifiListFragmentContainer,new DisplayPowerFragment());
-        //fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        //TODO This will be the 'add' button on the main page of the UI
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //UDPManager.getInstance().sendPacket(new EchoRequestRecord(), Constants.REMOTE_IP_ADDRESS);
-                UDPManager.getInstance().sendPacket(new ControlRecord("on2"),
-                        Constants.REMOTE_IP_ADDRESS);
-            }
-        });
+//        //TODO This will be the 'add' button on the main page of the UI
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                //UDPManager.getInstance().sendPacket(new EchoRequestRecord(), Constants.REMOTE_IP_ADDRESS);
+//                UDPManager.getInstance().sendPacket(new ControlRecord("on2"),
+//                        Constants.REMOTE_IP_ADDRESS);
+//            }
+//        });
 
 
         //This is the instance of the Navigation Drawer for the UI
@@ -115,10 +116,15 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         //can handle selections of the navigation options
         navigationView.setNavigationItemSelectedListener(this);
         //Bootloader has to setup everything first.
-
         BootlLoader bootlLoader = new BootlLoader(this);
         udpManager = UDPManager.getInstance();
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -163,10 +169,19 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         int id = item.getItemId();
 
         if (id == R.id.nav_smart_outlet_list) {
+            android.app.FragmentManager fragmentManager = getFragmentManager();
+            for(int i = 0; i < fragmentManager.getBackStackEntryCount(); ++i) {
+                fragmentManager.popBackStack();
+            }
             UIManager.getInstance().displayAvailableSmartOutlet();
         } else if (id == R.id.nav_setup) {
             android.app.FragmentManager fragmentManager = getFragmentManager();
             android.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+            for(int i = 0; i < fragmentManager.getBackStackEntryCount(); ++i) {
+                fragmentManager.popBackStack();
+            }
+
             android.app.ListFragment fragment = new WifiListFragment();
             fragmentTransaction.replace(R.id.wifiListFragmentContainer,fragment);
             fragmentTransaction.addToBackStack(null);
@@ -213,8 +228,12 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         //Register the receiver.
         registerReceiver(received,intentFilter);
 
+        CredentialBaseRecord credentialRecord = new CredentialBaseRecord(homeWifiName, homeWifiPassword);
+        udpManager.startTimerSendingSetupPackets(credentialRecord, Constants.REMOTE_IP_ADDRESS);
+
         ConnectionManager.getInstance().connectToWifi(outsmartWifiName, outSmartWifiPassword,
                 scannedResults);
+        UIManager.getInstance().disPlayMessage("Connecting ... \n Please  wait for 5s to 10 s");
     }
 
     @Override
@@ -229,8 +248,14 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
          *  The input from the user will be received rom the onFinishedEnteringInput.
          */
 
-        GetNickNameDialog dialog = new GetNickNameDialog();
-        dialog.show(getFragmentManager(),null);
+        if(id != "0") {
+            GetNickNameDialog dialog = new GetNickNameDialog();
+            dialog.setCancelable(false);
+            dialog.show(getFragmentManager(), null);
+        }
+        else{
+            UIManager.getInstance().disPlayMessage("Setup failed! Please try again");
+        }
     }
 
     @Override
@@ -240,6 +265,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         }
         else
             nickname = ssid;
+
         /**
          * At this point we have everything we need to save a new outsmart device.
          */
@@ -247,7 +273,6 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
                 password,ipAddress,smart_Outlet_Device_ID);
 
         SmartOutletManager.getInstance().saveSmartOutlet(smartOutlet);
-
 
         //TODO: Create global references for connectivity manager and filters. Also fix the arguments of connectToWifiBelow:
         //Get the connectivity manager.
@@ -257,11 +282,30 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(cm.CONNECTIVITY_ACTION);
 
+        //TODO: If needs be, register this again.
         //Register the receiver.
-        registerReceiver(received,intentFilter);
+        //registerReceiver(received,intentFilter);
 
         ConnectionManager.getInstance().connectToWifi(homeWifiName, homeWifiPassword,
                 scannedResults);
+
+        SmartOutlet deviceInfo = SmartOutletManager.getInstance().getActiveSmartOutlet();
+        if(deviceInfo != null) {
+            String ipAddress = deviceInfo.getIpAddress();
+            UDPManager.getInstance().sendPacket(new EchoRequestRecord(), ipAddress);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        //BootlLoader bootlLoader = new BootlLoader(this);
+        //udpManager = UDPManager.getInstance();
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
     private class ConnectedReceived extends BroadcastReceiver {
@@ -282,11 +326,8 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
                     if (ssid.contains(Constants.PASWWPRD_KEYWORD)) {    //Used contains rather than equals because the ssid returned has extra quotes that I am not sure why
                         //they are added. Change it to equals if you can fix it.
                         Log.e(TAG, " -- Wifi connected --- " + " SSID " + ssid);
-                        CredentialBaseRecord credentialRecord = new CredentialBaseRecord(homeWifiName, homeWifiPassword);
-                        for(int i = 0; i <3; i++){
-                            udpManager.sendPacket(credentialRecord, Constants.REMOTE_IP_ADDRESS);
-
-                        }
+                        //CredentialBaseRecord credentialRecord = new CredentialBaseRecord(homeWifiName, homeWifiPassword);
+                            //udpManager.startTimerSendingSetupPackets(credentialRecord, Constants.REMOTE_IP_ADDRESS);
                         unregisterReceiver(received);
                     }
 
@@ -295,10 +336,7 @@ public class MainActivity extends AppCompatActivity implements WifiListFragment.
                         SmartOutlet deviceInfo = SmartOutletManager.getInstance().getActiveSmartOutlet();
                         if(deviceInfo != null){
                             String ipAddress =deviceInfo.getIpAddress();
-                            for(int i = 0; i<3;i++){
                                 udpManager.sendPacket(new EchoRequestRecord(), ipAddress);
-
-                            }
                             unregisterReceiver(received);
                         }
                     }

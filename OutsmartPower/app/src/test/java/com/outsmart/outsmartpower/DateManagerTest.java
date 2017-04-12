@@ -1,5 +1,6 @@
 package com.outsmart.outsmartpower;
 
+import com.outsmart.outsmartpower.Support.Utilities;
 import com.outsmart.outsmartpower.managers.DateManager;
 
 import org.junit.Test;
@@ -23,8 +24,6 @@ public class DateManagerTest {
         System.out.println(date.getStandardTime());
         System.out.println(date.getDate(DATE_FORMAT.dayFirst));
 
-        //UDPClient.getInstance().execute("Packet");
-       // Log.e("TIME", ;
-
+        System.out.println(Utilities.getNowTimeInSeconds);
     }
 }

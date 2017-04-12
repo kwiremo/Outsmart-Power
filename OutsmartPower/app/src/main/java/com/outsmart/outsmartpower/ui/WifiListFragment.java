@@ -3,6 +3,7 @@ package com.outsmart.outsmartpower.ui;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.FragmentManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -20,11 +21,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.Support.Constants;
+import com.outsmart.outsmartpower.managers.ConnectionManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.network.UDPManager;
 import com.outsmart.outsmartpower.records.CredentialBaseRecord;
@@ -64,6 +67,15 @@ public class WifiListFragment extends android.app.ListFragment implements String
      */
     boolean hasEnteredHomeWifiPassword = false;
 
+    //When this button is clicked the fragment is popped off the stack thus returning back to the
+    //previous fragment.
+    Button cancelButton;
+
+    /**
+     * This field is true when this fragment is popped off the stack.
+     */
+    private boolean isPoppedOffStack;
+
     public interface onReceivedPreferredWifis{
         void receivePreferredWifis(String homeWifiName, String outsmartWifiName, String homeWifiPassword, String outSmartWifiPassword,
                                    List<ScanResult> scannedResults);
@@ -91,16 +103,23 @@ public class WifiListFragment extends android.app.ListFragment implements String
     }
 
     @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+    }
+
+    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        //Initialize the cancel button.
+        cancelButton = (Button) getActivity().findViewById(R.id.cancelListBTN);
 
         Tv = (TextView) getView().findViewById(R.id.wifiListTitleTV);
         Tv.setText("Scanning...");
         //baseActivity = getActivity();
         if(!hasFinishedScanning){
             //Check to see if we have all wifi permissions to scan device's wifi.
-            if(getPermissionsNeededToScan().size() == 0 )
-            {
+            if(getPermissionsNeededToScan().size() == 0 ) {
                 startScanning();
             }
             else{
@@ -108,6 +127,15 @@ public class WifiListFragment extends android.app.ListFragment implements String
             }
             hasFinishedScanning = true;
         }
+
+        isPoppedOffStack = false;
+        //Set listener.
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getActivity().onBackPressed();
+            }
+        });
     }
 
     @Override
@@ -196,6 +224,7 @@ public class WifiListFragment extends android.app.ListFragment implements String
             Tv.setText("AVAILABLE WIFI");
             //Switch to Smart Outlet network
             //switchNetwork(broadSmartOutletNetw,broadSmartOutletNetwPassword);
+            //ConnectionManager.getInstance().connectToWifi(broadSmartOutletNetw,broadSmartOutletNetwPassword, scannedResults);
         }
         else if(hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
             homeWifiPassword = password;
@@ -208,6 +237,7 @@ public class WifiListFragment extends android.app.ListFragment implements String
                 receivedPreferredWifis.receivePreferredWifis(homeWifiName, broadSmartOutletNetw, homeWifiPassword,
                        broadSmartOutletNetwPassword, scannedResults);
                 baseActivity.unregisterReceiver(wifiScanReceiver);
+                isPoppedOffStack = true;
                 baseActivity.getFragmentManager().popBackStack();
                 //Switch to Smart Outlet Network
                 //switchNetwork(homeWifiName,homeWifiPassword);
@@ -232,23 +262,30 @@ public class WifiListFragment extends android.app.ListFragment implements String
                                 SmartOutletManager.getInstance().removeOutlet(broadSmartOutletNetw);
                                 UIManager.getInstance().disPlayMessage(
                                         broadSmartOutletNetw + " was removed");
+                                isPoppedOffStack = true;
+                                baseActivity.onBackPressed();
                                 break;
                             case DialogInterface.BUTTON_NEGATIVE:
+                                isPoppedOffStack = true;
+                                baseActivity.onBackPressed();
+                                break;
+                            default:
                                 break;
                         }
-                        baseActivity.getFragmentManager().popBackStack();
-                        return;
                     }
                 });
+                return;
             }
             else{
                 StringInputDialog dialog = new StringInputDialog();
                 dialog.setTargetFragment(this,1);
+                dialog.setCancelable(false);
                 dialog.show(baseActivity.getFragmentManager(),null);
             }
         }
         else if(hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
             StringInputDialog dialog = new StringInputDialog();
+            dialog.setCancelable(false);
             dialog.setTargetFragment(this,1);
             dialog.show(baseActivity.getFragmentManager(),null);
 
@@ -257,6 +294,7 @@ public class WifiListFragment extends android.app.ListFragment implements String
         else
         {
             //If It gets here there is a problem. Go back and try again!
+            isPoppedOffStack = true;
             getActivity().getFragmentManager().popBackStack();
         }
     }
