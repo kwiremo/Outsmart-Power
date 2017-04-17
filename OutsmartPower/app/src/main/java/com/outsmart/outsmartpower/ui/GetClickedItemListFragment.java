@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -35,14 +36,14 @@ public class GetClickedItemListFragment extends ListFragment {
     ArrayAdapter<SmartOutlet> adapter;
 
     //Outsmart Manager is needed to get the list of available outsmart.
-    SmartOutletManager outsmartManager = SmartOutletManager.getInstance();
+    SmartOutletManager outsmartManager;
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         //Initialize the cancel button.
         cancelButton = (Button) getActivity().findViewById(R.id.cancelListBTN);
-
+        outsmartManager = SmartOutletManager.getInstance();
         //Set listener.
         cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -52,8 +53,10 @@ public class GetClickedItemListFragment extends ListFragment {
         });
 
         //Initialize the arrayAdapter.
-        adapter = new ArrayAdapter<SmartOutlet>(getActivity(),
+        adapter = new ArrayAdapter<>(getActivity(),
                 android.R.layout.simple_list_item_1,outsmartManager.getSmartOutletList());
+
+        getListView().setOnItemLongClickListener(removeSmartOutlet);
         setListAdapter(adapter);
     }
 
@@ -67,11 +70,24 @@ public class GetClickedItemListFragment extends ListFragment {
         void receiveClickedItem(int chosenOutsmart);
     }
 
+
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        OnReceivedClickedListItem receivedPosition = UIManager.getInstance();
+        OnReceivedClickedListItem receivedPosition = SmartOutletManager.getInstance();
         if(receivedPosition != null){
-            UIManager.getInstance().receiveClickedItem(position);
+            SmartOutletManager.getInstance().receiveClickedItem(position);
+            getFragmentManager().popBackStack();
         }
     }
+
+    private AdapterView.OnItemLongClickListener removeSmartOutlet = new AdapterView.OnItemLongClickListener() {
+        @Override
+        public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+            SmartOutlet smartOutlet = outsmartManager.getSmartOutletList().get(i);
+            if(smartOutlet != null){
+                outsmartManager.removeOutlet(smartOutlet.getNickname());
+            }
+            return false;
+        }
+    };
 }

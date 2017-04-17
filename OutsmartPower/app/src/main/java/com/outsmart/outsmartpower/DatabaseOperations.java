@@ -47,11 +47,11 @@ public class DatabaseOperations extends SQLiteOpenHelper {
             Constants.DEVICE_SSID + " CHARACTER(15)," + Constants.DEVICE_PASSWORD + " CHARACTER(15)," + Constants.DEVICE_ID + " CHARACTER(4))";
 
     //CREATE SETTINGS TABLE
-    /*
+    /**
     *   Cost Column in dollars.
     *   Date Format Column (0 for mm/dd/year and 1 for dd/mm/year) Default mm/dd/year
     *   Time Format Column (0 for standard time and 1 for military time) Default military time.
-    *   Unit Preference Column (0 for Kwh and 1 for KW) Default KWh
+    *   Unit Preference Column (0 for wh and 1 for KW) Default Wh
     */
 
     private String CREATE_SETTINGS_TABLE = "CREATE TABLE "+ Constants.SETTINGS_TABLE_NAME + "(" +
@@ -98,7 +98,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
     public void addSettingsRecord(SettingsRecord record)
     {
         SQLiteDatabase db = this.getWritableDatabase();
-
+        db.execSQL("DELETE FROM "  + Constants.SETTINGS_TABLE_NAME);
         ContentValues cv = new ContentValues( );
         cv.put(Constants.COST, record.getCost());
         cv.put(Constants.DATE_FORMAT, record.getDateFormat().ordinal());
@@ -224,10 +224,56 @@ public class DatabaseOperations extends SQLiteOpenHelper {
                 " == '" + broadcastedOutletNet + "'");
         db.close();
     }
+
+    /**
+     *   Cost Column in dollars.
+     *   Date Format Column (0 for mm/dd/year and 1 for dd/mm/year) Default mm/dd/year
+     *   Time Format Column (0 for standard time and 1 for military time) Default military time.
+     *   Unit Preference Column (0 for wh and 1 for KW) Default Wh
+     */
     public SettingsRecord getSetSettings(){
 
-        //TODO: Implement this to actually get these data from the database.
-        return new SettingsRecord(1, DATE_FORMAT.dayFirst, TIME_FORMAT.military, UNIT_PREFERENCE.Kwh);
+        String selectQuery = "SELECT *" + " FROM " + Constants.SETTINGS_TABLE_NAME;
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        double cost = 0;
+        int dateFormat = 0;
+        int timeFormat = 0;
+        int unitPreference = 0;
+        DATE_FORMAT date_format;
+        TIME_FORMAT time_format;
+        UNIT_PREFERENCE unit_preference;
+
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        // looping through all rows and adding to list
+        if (cursor.moveToFirst()) {
+            do {
+                cost= cursor.getDouble(0);
+                dateFormat = cursor.getInt(1);
+                timeFormat = cursor.getInt(2);
+                unitPreference = cursor.getInt(3);
+            } while (cursor.moveToNext());
+        }
+
+        if(dateFormat == 0)
+            date_format = DATE_FORMAT.monthFirst;
+        else
+            date_format = DATE_FORMAT.dayFirst;
+
+        if(timeFormat == 0)
+            time_format = TIME_FORMAT.standard;
+        else
+            time_format = TIME_FORMAT.military;
+
+        if(unitPreference == 0)
+            unit_preference = UNIT_PREFERENCE.W;
+        else
+            unit_preference = UNIT_PREFERENCE.Kwh;
+
+        db.close();
+
+        return new SettingsRecord(cost, date_format, time_format, unit_preference);
     }
 
     /**

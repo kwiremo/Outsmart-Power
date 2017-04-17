@@ -1,6 +1,5 @@
 package com.outsmart.outsmartpower;
 
-import com.outsmart.outsmartpower.Support.Utilities;
 import com.outsmart.outsmartpower.managers.DateManager;
 
 import org.junit.Test;
@@ -23,7 +22,5 @@ public class DateManagerTest {
         DateManager date = new DateManager(DateManager.getThiWeekSeconds());
         System.out.println(date.getStandardTime());
         System.out.println(date.getDate(DATE_FORMAT.dayFirst));
-
-        System.out.println(Utilities.getNowTimeInSeconds);
     }
 }

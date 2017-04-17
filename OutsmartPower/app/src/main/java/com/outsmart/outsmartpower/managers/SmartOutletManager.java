@@ -7,9 +7,12 @@ import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.SmartOutlet;
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.ParentActivity;
+import com.outsmart.outsmartpower.network.UDPManager;
+import com.outsmart.outsmartpower.records.EchoRequestRecord;
 import com.outsmart.outsmartpower.records.PowerRecord;
 import com.outsmart.outsmartpower.records.StatusRecord;
 import com.outsmart.outsmartpower.ui.DisplayPowerFragment;
+import com.outsmart.outsmartpower.ui.GetClickedItemListFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +22,11 @@ import java.util.Observer;
 /**
  * Created by Rene Moise on 2/14/2017.
  */
-public class SmartOutletManager extends Observable implements Observer{
+public class SmartOutletManager extends Observable implements Observer,
+        GetClickedItemListFragment.OnReceivedClickedListItem{
+
     private static SmartOutletManager ourInstance = new SmartOutletManager();
-    public static SmartOutletManager getInstance() {
-        return ourInstance;
-    }
+
     private SmartOutlet activeSmartOutlet;
     private boolean smart_OutletConnected;
     /**
@@ -44,12 +47,22 @@ public class SmartOutletManager extends Observable implements Observer{
      */
     DatabaseOperations databaseOperations;
 
+    /**
+     * The UDPManager is needed to send the echo request when the phone app is first launched or
+     * when we set a new active smart outlet.
+     */
+    private UDPManager udpManager;
+
     private SmartOutletManager() {
         smartOutletList = new ArrayList<>();
     }
 
     //Get the smart outlet informations.
 
+
+    public static SmartOutletManager getInstance() {
+        return ourInstance;
+    }
 
     public List<SmartOutlet> getSmartOutletList() {
         return smartOutletList;
@@ -66,6 +79,9 @@ public class SmartOutletManager extends Observable implements Observer{
     public void update(Observable observable, Object o) {
         if(observable.getClass() == BootlLoader.class)
         {
+            //Initialize the udpManager
+            udpManager = UDPManager.getInstance();
+
             //Initialize mainActivity.
             mainActivity = ParentActivity.getParentActivity();
             //Save the database reference
@@ -85,7 +101,7 @@ public class SmartOutletManager extends Observable implements Observer{
                 String activeID = databaseOperations.getActiveSmartOutlet();
                 for(int i = 0; i<smartOutletList.size(); i++){
                     if(smartOutletList.get(i).getSmart_Outlet_Device_ID().equals( activeID)){
-                        activeSmartOutlet = smartOutletList.get(i);
+                        setActiveSmartOutlet(smartOutletList.get(i));
                         updateUITitle(activeSmartOutlet.getNickname());
                         break;
                     }
@@ -95,16 +111,21 @@ public class SmartOutletManager extends Observable implements Observer{
     }
 
     private void updateUITitle(String nickname) {
-        DisplayPowerFragment displayPowerFragment = (DisplayPowerFragment) mainActivity.
-                getFragmentManager().findFragmentById(R.id.wifiListFragmentContainer);
+        try {
+            DisplayPowerFragment displayPowerFragment = (DisplayPowerFragment) mainActivity.
+                    getFragmentManager().findFragmentById(R.id.wifiListFragmentContainer);
 
-        if(displayPowerFragment != null){
-            displayPowerFragment.updateSmartOutletTitle(nickname);
+            if (displayPowerFragment != null) {
+                displayPowerFragment.updateSmartOutletTitle(nickname);
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 
     public void saveSmartOutlet(SmartOutlet info){
-        activeSmartOutlet = info;
+        setActiveSmartOutlet(info);
         databaseOperations.addSmartOutletInfo(info);
         databaseOperations.updateActiveSmartOutlet(info.getSmart_Outlet_Device_ID());
         smartOutletList.add(info);
@@ -113,7 +134,7 @@ public class SmartOutletManager extends Observable implements Observer{
 
     public void setActiveSmartOutlet(SmartOutlet activeSmartOutlet) {
         this.activeSmartOutlet = activeSmartOutlet;
-        updateObservers();
+        sendEchoRequest();
     }
 
     /**
@@ -129,7 +150,8 @@ public class SmartOutletManager extends Observable implements Observer{
 
     public void setSmart_OutletConnected(boolean smart_OutletConnected) {
         this.smart_OutletConnected = smart_OutletConnected;
-       updateObservers();
+
+       //updateObservers();
     }
 
     public boolean isRegistered(String broadSmartOutletNetw){
@@ -149,12 +171,13 @@ public class SmartOutletManager extends Observable implements Observer{
         }
 
         if(smartOutletList.size() > 0){
-            activeSmartOutlet = smartOutletList.get(smartOutletList.size()-1);
+            setActiveSmartOutlet(smartOutletList.get(smartOutletList.size()-1));
             databaseOperations.updateActiveSmartOutlet(activeSmartOutlet.getSmart_Outlet_Device_ID());
             updateUITitle(activeSmartOutlet.getNickname());
         }
         else {
-            //updateUITitle("--");
+            activeSmartOutlet = null;
+            updateUITitle("--");
         }
     }
 
@@ -216,5 +239,37 @@ public class SmartOutletManager extends Observable implements Observer{
     public ArrayList<PowerRecord> getRecordsInRange(int startSeconds, int endSeconds){
         return databaseOperations.getAllRecordsInRange(
                 activeSmartOutlet.getSmart_Outlet_Device_ID(),startSeconds, endSeconds);
+    }
+
+    @Override
+    public void receiveClickedItem(int chosenOutsmart) {
+        setActiveSmartOutlet(smartOutletList.get(chosenOutsmart));
+    }
+
+    /**
+     * This function is called to send an echo request to the active smart outlet.
+     * Sending an echo request to a smart outlet insures that the remote has our ip address
+     * and that it can send us packets.
+     */
+    public void sendEchoRequest(){
+        udpManager.startTimerSendingSetupPackets(
+                new EchoRequestRecord(),activeSmartOutlet.getIpAddress());
+    }
+
+    public double getAverageCostToday(){
+        double averagePower = getAveragePowerToday();
+
+        return averagePower * SettingsManager.getInstance().getCost()*
+                DateManager.getNumberOfHoursSinceMidnight()/1000/3600;
+    }
+
+    private double getAveragePowerToday(){
+        double averagePower = 0;
+        for(PowerRecord powerRecord:getRecordsInRange(DateManager.getTodayMidnightSeconds(),
+                DateManager.getNowSeconds())){
+            averagePower = powerRecord.getPower1() + powerRecord.getPower2() +
+                    powerRecord.getCurrent_3() + powerRecord.getPower4();
+        }
+        return averagePower;
     }
 }

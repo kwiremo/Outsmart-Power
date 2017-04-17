@@ -68,7 +68,7 @@ void setup() {
 	setupAPWiFi();
 	
 	Udp.begin(localUdpPort);
-  timeUdp.begin(localTimePort);
+	//timeUdp.begin(localTimePort);
 
   //Alert that setup is complete
   mySerial.println("Ready!");
@@ -76,6 +76,12 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
+
+	if (!connectedToHomeWifi){
+		if (setupSTAMode("eaglesnet", "")){
+			connectedToHomeWifi = true;
+		}
+	}
 
 	int noBytes;
 	noBytes = Udp.parsePacket();
@@ -122,10 +128,10 @@ void loop() {
 				//Start STA Connection if not already connected.
 				if (setupSTAMode(wifiNameChar, passwordChar))
 				{
-					if (firstTimeWriting){
+					//if (firstTimeWriting){
 						//getTimeFromInternet();
-						firstTimeWriting = false;
-					}
+						//firstTimeWriting = false;
+					//}
 					connectedToHomeWifi = true;
 					Serial.println("Internet is successfully connected!");
 					Serial.println(WiFi.localIP().toString());
@@ -225,35 +231,35 @@ void loop() {
 		}
 
 	}
-	//char remoteIP[15] = "192.168.4.2";
 	
-	if (true){
-		//sendPowerRecords();
-		//Reserve memory space
-		StaticJsonBuffer<300> jsonBufferSend;
+	if (connectedToPhoneApp){
+		////sendPowerRecords();
+		////Reserve memory space
+		//StaticJsonBuffer<300> jsonBufferSend;
 
-		//status1 = 1;
-		//Build object tree in memory
-		JsonObject& root = jsonBufferSend.createObject();
-		root["type"] = "PORE";
-		root["t"] = String(1491685038);
-		root["v"] = String(120);
+		////status1 = 1;
+		////Build object tree in memory
+		//JsonObject& root = jsonBufferSend.createObject();
+		//root["type"] = "PORE";
+		//root["t"] = String(1491685038);
+		//root["v"] = String(120);
 
-		root["c1"] = String(current1); root["c2"] = String(current1);
-		root["c3"] = String(current1); root["c4"] = String(current1);
-		root["s1"] = String(status1); root["s2"] = String(status2);
-		root["s3"] = String(status3); root["s4"] = String(status4);
-		root["id"] = macID;
-		char messageToSend[200];
-		root.printTo(messageToSend, sizeof(messageToSend));
-		String toSendData = messageToSend;
-		//Serial.println(toSendData);
-		current1 = current1 + .01;
-		current2 = current1 + .01;
-		current3 = current1 + .01;
-		current4 = current1 + .01;
-		//send UDP Packet
-		sendUDPPacket(toSendData, remoteIP, remoteIPPort);
+		//root["c1"] = String(current1); root["c2"] = String(current1);
+		//root["c3"] = String(current1); root["c4"] = String(current1);
+		//root["s1"] = String(status1); root["s2"] = String(status2);
+		//root["s3"] = String(status3); root["s4"] = String(status4);
+		//root["id"] = macID;
+		//char messageToSend[200];
+		//root.printTo(messageToSend, sizeof(messageToSend));
+		//String toSendData = messageToSend;
+		////Serial.println(toSendData);
+		//current1 = current1 + .01;
+		//current2 = current1 + .01;
+		//current3 = current1 + .01;
+		//current4 = current1 + .01;
+		////send UDP Packet
+		//sendUDPPacket(toSendData, remoteIP, remoteIPPort);
+		sendPowerRecords();
 		sendStatusUpdate();
 	}
 
@@ -423,12 +429,13 @@ void sendPowerRecords(){
 	    return;
 	  }
 
-	  root["t"] = String(epoch);
+	  root["t"] = String(1491685038);
 	  root["id"] = macID;
 	  root["type"] = "PORE";
 	  char messageToSend[250];
 	  root.printTo(messageToSend, sizeof(messageToSend));
 	  String toSendData = messageToSend;
+	  //Serial.println(toSendData);
 
 	  //send UDP Packet
 	  sendUDPPacket(toSendData, remoteIP, remoteIPPort);

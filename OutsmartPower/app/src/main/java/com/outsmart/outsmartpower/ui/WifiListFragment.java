@@ -3,7 +3,6 @@ package com.outsmart.outsmartpower.ui;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.FragmentManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -11,12 +10,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.wifi.ScanResult;
-import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,65 +21,58 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
+
 import com.outsmart.outsmartpower.R;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.managers.ConnectionManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
-import com.outsmart.outsmartpower.network.UDPManager;
-import com.outsmart.outsmartpower.records.CredentialBaseRecord;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import static android.content.ContentValues.TAG;
+
 import static com.outsmart.outsmartpower.Support.Constants.REQUEST_ID_MULTIPLE_PERMISSIONS;
 
 /**
  * Created by Rene Moise on 2/22/2017.
  */
 
+/**
+ * As of 4/16/2017, this fragment is owned by the mainActivity. when started, it scans for
+ * available wifis. If there are available smart outlets, it asks the user for what home wifi
+ * he/she is willing to use for connection (talking between phone app and smart outlet). Once the
+ * user selects it, the phone app sends both home wifi and passwords to the main activity (responsible
+ * for setting up a new smart outlet for now), which in turn sends the credentials to the smart
+ * outlet.
+ */
 public class WifiListFragment extends android.app.ListFragment implements StringInputDialog.onInputButtonClicked {
 
     ArrayAdapter wifiListAdapter;   //Responsible to display an array list of wifi on the screen.
-    //ListView Lv;    //The list view on the screen that will display a list of wifi.
     private WifiManager wifiManager;    //wifimanager needed for the wifi_service class.
     //Create an instance of wifiscanreceiver to start listening for a wifi scan if requested.
     private WifiScanReceiver wifiScanReceiver;
-    TextView Tv;    //Looking available wifi when scanning and displays WIFI list when found.
-
+    TextView availWifisTV;    //Looking available wifi when scanning and displays WIFI list when found.
     ArrayList<String> allAvailableNetworks; //contains all available networks
     ArrayList<String> availableWifis;   //contains a list of available wifi network.
     ArrayList<String> availableOutsmartWifi;    //Contains available outsmart hotspots.
-
     boolean hasFinishedScanning = false;    //Set to true if the phone app has already scanned.
-    /**
-     *     This is true if the user has entered the password for an outsmart device.
-     */
+    //This is true if the user has entered the password for an outsmart device.
     boolean hasEnteredOutsmartPassword = false;
-
-    /**
-     *     This is true if the user has entered the password for a home wifi.
-     */
+    // This is true if the user has entered the password for a home wifi.
     boolean hasEnteredHomeWifiPassword = false;
-
     //When this button is clicked the fragment is popped off the stack thus returning back to the
     //previous fragment.
     Button cancelButton;
 
     /**
-     * This field is true when this fragment is popped off the stack.
+     * This interface is used to send homeWifiName, outsmartWifiName, homeWifiPassword,
+     * outSmartWifiPassword to the mainActivity.
      */
-    private boolean isPoppedOffStack;
-
     public interface onReceivedPreferredWifis{
-        void receivePreferredWifis(String homeWifiName, String outsmartWifiName, String homeWifiPassword, String outSmartWifiPassword,
-                                   List<ScanResult> scannedResults);
+        void receivePreferredWifis(String homeWifiName, String outsmartWifiName,
+                                   String homeWifiPassword, String outSmartWifiPassword);
     }
 
     List<ScanResult> scannedResults;
-
     String homeWifiName = "";
     String broadSmartOutletNetw = "";
     String homeWifiPassword = "";
@@ -91,15 +81,14 @@ public class WifiListFragment extends android.app.ListFragment implements String
     //This variable is for saving the activity that used this fragment.
     Activity baseActivity;
 
+    /**
+     * On attach, we get the activity that started this fragment.
+     * @param context
+     */
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         baseActivity = (Activity) context;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
     }
 
     @Override
@@ -114,8 +103,8 @@ public class WifiListFragment extends android.app.ListFragment implements String
         //Initialize the cancel button.
         cancelButton = (Button) getActivity().findViewById(R.id.cancelListBTN);
 
-        Tv = (TextView) getView().findViewById(R.id.wifiListTitleTV);
-        Tv.setText("Scanning...");
+        availWifisTV = (TextView) getView().findViewById(R.id.wifiListTitleTV);
+        availWifisTV.setText("Scanning...");
         //baseActivity = getActivity();
         if(!hasFinishedScanning){
             //Check to see if we have all wifi permissions to scan device's wifi.
@@ -123,12 +112,13 @@ public class WifiListFragment extends android.app.ListFragment implements String
                 startScanning();
             }
             else{
-                requestPermissionsFromTheUser(getPermissionsNeededToScan());
+                UIManager.getInstance().disPlayMessage("Please go to settings " +
+                        "and provide required permissions.");
+                getFragmentManager().popBackStack();
             }
             hasFinishedScanning = true;
         }
 
-        isPoppedOffStack = false;
         //Set listener.
         cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -161,55 +151,70 @@ public class WifiListFragment extends android.app.ListFragment implements String
         wifiManager.startScan();
     }
 
-    private void requestPermissionsFromTheUser(List<String> listPermissionsNeeded) {
-        ActivityCompat.requestPermissions(baseActivity,
-                listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]),REQUEST_ID_MULTIPLE_PERMISSIONS);
-    }
-
     //Broadcast Receiver is also needed to listen and run upon the completetio of wifi scan. The action is wifiScan.
-    private class WifiScanReceiver extends BroadcastReceiver
-    {
+    private class WifiScanReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-                //Creating references to the list of available networks.
-                allAvailableNetworks = new ArrayList<>();
-                availableOutsmartWifi = new ArrayList<>();
-                availableWifis = new ArrayList<>();
+            baseActivity.unregisterReceiver(wifiScanReceiver);
+            //Creating references to the list of available networks.
+            allAvailableNetworks = new ArrayList<>();
+            availableOutsmartWifi = new ArrayList<>();
+            availableWifis = new ArrayList<>();
 
-               scannedResults = wifiManager.getScanResults();
+            scannedResults = wifiManager.getScanResults();
 
-                for(ScanResult scanResult: scannedResults){
-                    {
-                        if (!(allAvailableNetworks.contains(scanResult.SSID))) {
-                            allAvailableNetworks.add(scanResult.SSID);
-                        }
+            //Setup the scanned results.
+            ConnectionManager.getInstance().setScanResults(scannedResults);
+
+            for(ScanResult scanResult: scannedResults){
+                {
+                    if (!(allAvailableNetworks.contains(scanResult.SSID))) {
+                        allAvailableNetworks.add(scanResult.SSID);
                     }
                 }
+            }
 
-                //Save both outsmart hotspots and other wifis.
-                for(String wifi: allAvailableNetworks){
-                    if(wifi.contains(Constants.PASWWPRD_KEYWORD))
-                        availableOutsmartWifi.add(wifi);
-                    else
-                        availableWifis.add(wifi);
-                }
-
-                if(!scannedResults.isEmpty()) {
-
-                    wifiListAdapter = new ArrayAdapter(baseActivity,
-                            android.R.layout.simple_list_item_1, availableOutsmartWifi);
-                    setListAdapter(wifiListAdapter);
-
-                    Tv.setText("AVAILABLE OUTSMART WIFI");
-                }
+            //Save both outsmart hotspots and other wifis.
+            for(String wifi: allAvailableNetworks){
+                if(wifi.contains(Constants.PASWWPRD_KEYWORD))
+                    availableOutsmartWifi.add(wifi);
                 else
-                    Tv.setText("No OutSmart Device Found.");
+                    availableWifis.add(wifi);
+            }
+
+            if(!availableOutsmartWifi.isEmpty()) {
+
+                wifiListAdapter = new ArrayAdapter(baseActivity,
+                        android.R.layout.simple_list_item_1, availableOutsmartWifi);
+                setListAdapter(wifiListAdapter);
+
+                availWifisTV.setText("AVAILABLE OUTSMART WIFI");
+            }
+            else
+            {
+                showDialogOK("No Smart Outlets were found!\nTry again?", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        switch (i){
+                            case DialogInterface.BUTTON_POSITIVE:
+                                startScanning();
+                                break;
+                            case DialogInterface.BUTTON_NEGATIVE:
+                                getFragmentManager().popBackStack();
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                });
             }
         }
+    }
 
-    //This is a callback to the dialog fragment. Since this class implements the getPassordDialog
-    //interface, it has to implement this method. The input entered on the dialog is received here.
-
+    /**
+     * This is a callback to the dialog fragment. Since this class implements the getPassordDialog
+     * interface, it has to implement this method. The input entered on the dialog is received here.
+     */
     @Override
     public void onFinishedEnteringInput(String password) {
 
@@ -220,31 +225,27 @@ public class WifiListFragment extends android.app.ListFragment implements String
             wifiListAdapter = new ArrayAdapter(baseActivity,
                     android.R.layout.simple_list_item_1, availableWifis);
             setListAdapter(wifiListAdapter);
-            //Lv.setAdapter(wifiListAdapter);
-            Tv.setText("AVAILABLE WIFI");
-            //Switch to Smart Outlet network
-            //switchNetwork(broadSmartOutletNetw,broadSmartOutletNetwPassword);
-            //ConnectionManager.getInstance().connectToWifi(broadSmartOutletNetw,broadSmartOutletNetwPassword, scannedResults);
+            availWifisTV.setText("AVAILABLE WIFI");
         }
         else if(hasEnteredOutsmartPassword && !hasEnteredHomeWifiPassword){
             homeWifiPassword = password;
             hasEnteredHomeWifiPassword = true;
             onReceivedPreferredWifis receivedPreferredWifis = (onReceivedPreferredWifis) getActivity();
             if(receivedPreferredWifis != null) {
-                // Send Credential Packet to Smart Outlet being setup
-                //UDPManager.getInstance().sendPacket(new CredentialBaseRecord(homeWifiName, homeWifiPassword), Constants.REMOTE_IP_ADDRESS);
-
                 receivedPreferredWifis.receivePreferredWifis(homeWifiName, broadSmartOutletNetw, homeWifiPassword,
-                       broadSmartOutletNetwPassword, scannedResults);
-                baseActivity.unregisterReceiver(wifiScanReceiver);
-                isPoppedOffStack = true;
+                       broadSmartOutletNetwPassword);
                 baseActivity.getFragmentManager().popBackStack();
-                //Switch to Smart Outlet Network
-                //switchNetwork(homeWifiName,homeWifiPassword);
             }
         }
     }
 
+    /**
+     * This is a callback that listens to an item click.
+     * @param l
+     * @param v
+     * @param position
+     * @param id
+     */
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
 
@@ -262,11 +263,9 @@ public class WifiListFragment extends android.app.ListFragment implements String
                                 SmartOutletManager.getInstance().removeOutlet(broadSmartOutletNetw);
                                 UIManager.getInstance().disPlayMessage(
                                         broadSmartOutletNetw + " was removed");
-                                isPoppedOffStack = true;
                                 baseActivity.onBackPressed();
                                 break;
                             case DialogInterface.BUTTON_NEGATIVE:
-                                isPoppedOffStack = true;
                                 baseActivity.onBackPressed();
                                 break;
                             default:
@@ -294,11 +293,15 @@ public class WifiListFragment extends android.app.ListFragment implements String
         else
         {
             //If It gets here there is a problem. Go back and try again!
-            isPoppedOffStack = true;
             getActivity().getFragmentManager().popBackStack();
         }
     }
 
+    /**
+     * This is also used in mainActivity. The improvement would be handling all the listening
+     * operations in the Connection Manager.
+     * @return
+     */
     private List<String> getPermissionsNeededToScan()
     {
         int permissionAcessCoarseLocation = ContextCompat.checkSelfPermission(baseActivity,
@@ -312,59 +315,6 @@ public class WifiListFragment extends android.app.ListFragment implements String
         return listPermissionsNeeded;
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        Log.d("PERMISSIONS", "Permission callback called-------");
-        switch (requestCode) {
-            case REQUEST_ID_MULTIPLE_PERMISSIONS: {
-
-                Map<String, Integer> perms = new HashMap<>();
-                // Initialize the map with both permissions
-                perms.put(Manifest.permission.ACCESS_COARSE_LOCATION, PackageManager.PERMISSION_GRANTED);
-                // Fill with actual results from user
-                if (grantResults.length > 0) {
-                    for (int i = 0; i < permissions.length; i++)
-                        perms.put(permissions[i], grantResults[i]);
-                    // Check for both permissions
-                    if (perms.get(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED )
-                    {
-                        Log.d(TAG, "ACCESS_COARSE_LOCATION GRANTED");
-                        startScanning();    //Start scanning.
-                    } else {
-                        Log.d(TAG, "Some permissions are not granted ask again ");
-                        //permission is denied (this is the first time, when "never ask again" is not checked) so ask again explaining the usage of permission
-//                        // shouldShowRequestPermissionRationale will return true
-                        //show the dialog or snackbar saying its necessary and try again otherwise proceed with setup.
-                        if (ActivityCompat.shouldShowRequestPermissionRationale(baseActivity, Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                            showDialogOK("COARSE_Location Services Permission required for this app",
-                                    new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            switch (which) {
-                                                case DialogInterface.BUTTON_POSITIVE:
-                                                    requestPermissionsFromTheUser(getPermissionsNeededToScan());
-                                                    break;
-                                                case DialogInterface.BUTTON_NEGATIVE:
-                                                    // proceed with logic by disabling the related features or quit the app.
-                                                    break;
-                                            }
-                                        }
-                                    });
-                        }
-                        //permission is denied (and never ask again is  checked)
-                        //shouldShowRequestPermissionRationale will return false
-                        else {
-                            Toast.makeText(baseActivity, "Go to settings and enable permissions", Toast.LENGTH_LONG)
-                                    .show();
-                            //                            //proceed with logic by disabling the related features or quit the app.
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     private void showDialogOK(String message, DialogInterface.OnClickListener okListener) {
         new AlertDialog.Builder(baseActivity)
                 .setMessage(message)
@@ -374,22 +324,22 @@ public class WifiListFragment extends android.app.ListFragment implements String
                 .show();
     }
 
-    //Method to automatically switch networks
-    private void switchNetwork(String ssidToSwitchTo, String passwordToUse){
-        WifiConfiguration conf = new WifiConfiguration();
-        conf.SSID = "\"" + ssidToSwitchTo + "\"";
-        conf.preSharedKey = "\"" + passwordToUse + "\"";
-        WifiManager wifiManager = (WifiManager)getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        wifiManager.addNetwork(conf);
-        List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
-        for( WifiConfiguration i : list ) {
-            if(i.SSID != null && i.SSID.equals("\"" + ssidToSwitchTo + "\"")) {
-                wifiManager.disconnect();
-                wifiManager.enableNetwork(i.networkId, true);
-                wifiManager.reconnect();
+    /**
+     * Not used: It would be used to display a message to the user.
+     */
+    private void displayNoAvailableOutsmart(){
+        AlertDialog.Builder builder1 = new AlertDialog.Builder(getActivity());
+        builder1.setTitle("No Available Smart Outlets");
+        builder1.setMessage("No Smart Outlets were found!\nPlease try again");
+        builder1.setCancelable(true);
+        builder1.setNeutralButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
 
-                break;
-            }
-        }
+        AlertDialog alert11 = builder1.create();
+        alert11.show();
     }
 }

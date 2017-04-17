@@ -23,32 +23,35 @@ import java.util.Observer;
 /**
  * This UIManager class will handle all interactions with the user.
  */
-public class UIManager implements Observer,GetClickedItemListFragment.OnReceivedClickedListItem {
+public class UIManager implements Observer{
+    //The unique instance of this class.
     private static UIManager ourInstance = new UIManager();
-    public static UIManager getInstance() {
-        return ourInstance;
-    }
-    List<SmartOutlet> deviceInfos;
-    Activity parentActivity = ParentActivity.getParentActivity();
-    SmartOutletManager smartOutletManager;
 
+    Activity parentActivity;
     private UIManager() {
     }
 
-
-    //To display on screen. Traditinally called a toast.
+    //To display on screen. Traditionally called a toast.
     public  void disPlayMessage(String message, int displayTime, Context context){
         Toast.makeText(context, message, displayTime).show();
     }
 
-    //To display on screen. Traditinally called a toast.
+    //To display on screen. Traditionally called a toast.
     public  void disPlayMessage(String message, Context context){
         disPlayMessage(message, Toast.LENGTH_LONG, context); // default is long time
     }
 
-    //To display on screen. Traditinally called a toast.
+    //To display on screen. Traditionally called a toast.
     public  void disPlayMessage(String message){
-        disPlayMessage(message, Toast.LENGTH_LONG, parentActivity.getBaseContext()); // default is long time
+        disPlayMessage(message, Toast.LENGTH_LONG, parentActivity.getBaseContext());
+    }
+
+    /**
+     * Returns the UIManager only instance.
+     * @return
+     */
+    public static UIManager getInstance() {
+        return ourInstance;
     }
 
     //This method starts a fragment that displays the list of smartoutlets to the user
@@ -61,16 +64,11 @@ public class UIManager implements Observer,GetClickedItemListFragment.OnReceived
         fragmentTransaction.commit();
     }
 
+    //Called when the observables call notifyobservers.
     @Override
     public void update(Observable observable, Object o) {
-
-        if(observable.getClass().equals(BootlLoader.class))
-        {
+        if(observable.getClass().equals(BootlLoader.class)) {
+            parentActivity = ParentActivity.getParentActivity();
         }
-    }
-
-    @Override
-    public void receiveClickedItem(int chosenOutsmart) {
-        smartOutletManager.setActiveSmartOutlet(deviceInfos.get(chosenOutsmart));
     }
 }

@@ -12,6 +12,10 @@ import org.json.JSONObject;
  * Created by Rene Moise on 1/20/2017.
  */
 
+/**
+ * The power record contains all currents and voltages. The power record also can return the power
+ * value associated with the currents.
+ */
 public class PowerRecord extends BaseRecord{
     private DateManager recordTime;
     private   double current_1;
@@ -37,7 +41,16 @@ public class PowerRecord extends BaseRecord{
         try
         {
             JSONObject json = new JSONObject(JSONString);
-            DateManager time = new DateManager(Integer.parseInt(json.getString(Constants.SECONDS)));
+
+            /**
+             * The time was supposed to come from the ESP8266. This is because the ESP8266 is the one
+             * that knows the exact time of when the record was read. However, the function that
+             * requests time on the ESP8266 could not function properly. It turns off the hotspot
+             * and as a consequence, it breaks the communication between the app and the smart outlet.
+             * We are getting time here so we can store data with time. That way we are able to
+             * plot data.
+             */
+            DateManager time = new DateManager(DateManager.getNowSeconds());
             Double current_1 = Double.parseDouble(json.getString(Constants.CURRENT_1));
             Double current_2 = Double.parseDouble(json.getString(Constants.CURRENT_2));
             Double current_3 = Double.parseDouble(json.getString(Constants.CURRENT_3));

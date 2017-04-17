@@ -14,7 +14,8 @@ import java.util.Locale;
  *
  * Name: DateManager Class
  *
- * Description: TODO describe this class
+ * Description: This class provides different functions that are needed for time operations.
+ * For example, it provides the number of seconds since midnight and so many other functions.
  */
 
 /*
@@ -109,5 +110,10 @@ public class DateManager extends Timestamp{
         return getTodayMidnightSeconds() - (Constants.WEEK_DAYS * Constants.DAY_SECONDS);
     }
 
-    public static int getThirtDays() {return getTodayMidnightSeconds() - (Constants.MONTH_DAYS*Constants.DAY_SECONDS);}
+    public static int getThirtDays() {return getTodayMidnightSeconds() -
+            (Constants.MONTH_DAYS*Constants.DAY_SECONDS);}
+
+    public static double getNumberOfHoursSinceMidnight(){
+        return (getNowSeconds()-getTodayMidnightSeconds())/3600;
+    }
 }

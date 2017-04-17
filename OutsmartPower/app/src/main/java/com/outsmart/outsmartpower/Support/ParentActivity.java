@@ -6,8 +6,13 @@ import android.app.Fragment;
 /**
  * Created by Rene Moise on 1/16/2017.
  */
+
+/**
+ * It returns the context of the mainActivity.
+ */
 public class ParentActivity {
     private static ParentActivity ourInstance = new ParentActivity();
+
     public static ParentActivity getInstance() {
         return ourInstance;
     }
@@ -28,8 +33,4 @@ public class ParentActivity {
     public static void setParentActivity(Activity myParentActivity) {
         mainActivity = myParentActivity;
     }
-
-//    public static void setMainFragmentActivity (Fragment mainFragmActivity){
-//        mainFragmentActivity = mainFragmActivity;
-//    }
 }

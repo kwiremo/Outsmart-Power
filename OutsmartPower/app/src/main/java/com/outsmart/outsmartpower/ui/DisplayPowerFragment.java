@@ -23,6 +23,7 @@ import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
 import com.outsmart.outsmartpower.helperclasses.DataWrapper;
 import com.outsmart.outsmartpower.managers.DateManager;
+import com.outsmart.outsmartpower.managers.SettingsManager;
 import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.network.UDPManager;
 import com.outsmart.outsmartpower.records.ControlRecord;
@@ -54,7 +55,7 @@ public class DisplayPowerFragment extends Fragment {
     private ToggleButton tglbtn_OffOn1, tglbtn_OffOn2, tglbtn_OffOn3, tglbtn_OffOn4;
 
     //DEFINE TEXT VIEWS
-    private TextView tv_power1, tv_power2, tv_power3, tv_power4;
+    private TextView tv_power1, tv_power2, tv_power3, tv_power4, tv_cost;
 
     //Learn more buttons
     private Button btn_More1, btn_More2, btn_More3, btn_More4;
@@ -62,12 +63,6 @@ public class DisplayPowerFragment extends Fragment {
     //It has a reference to the OutsmartManager. It will be used to know what smart-outlet is
     //active at the moment. That is the device that will be sent the information.
     SmartOutletManager smartOutletManager;
-
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
 
     /**
      * We are using the content_main layout.
@@ -82,6 +77,15 @@ public class DisplayPowerFragment extends Fragment {
         return inflater.inflate(R.layout.content_main,container, false);
     }
 
+    /**
+     * When the view is created, I create listeners for all the views that need listeners.
+     * The statistics button listener gets power values and starts an activity. To improve the way
+     * I handled them, a function would be created that takes in x values and y values to start
+     * an activity with those data. However, I still insist that this function should have been
+     * implemented inside the graph activity. (Look the graph comments.)
+     * @param view
+     * @param savedInstanceState
+     */
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -96,6 +100,8 @@ public class DisplayPowerFragment extends Fragment {
 
         //Initialize the showActiveSmartoutlet
         showActiveTV = (TextView) getActivity().findViewById(R.id.deviceNameTV);
+
+        tv_cost = (TextView) getActivity().findViewById(R.id.costTV);
         //DEFINE BUTTON INSTANCES
 
         //Toggle buttons
@@ -200,14 +206,112 @@ public class DisplayPowerFragment extends Fragment {
 
 
                 if(records.size() > 0) {
-                    ArrayList<String> Y_Values = new ArrayList<String>();
-                    ArrayList<String> X_Values = new ArrayList<String>();
+                    ArrayList<String> Y_Values = new ArrayList<>();
+                    ArrayList<String> X_Values = new ArrayList<>();
 
                     for(int i = 0; i<records.size(); i++) {
                         Y_Values.add(records.get(i).getPower1()+"");
                         X_Values.add(records.get(i).getRecordTime().getMilitaryTime());
                     }
-                    Log.e("SIZE", records.size()+"");
+
+                    DataWrapper wrapper1 = new DataWrapper(X_Values);
+                    DataWrapper wrapper2 = new DataWrapper(Y_Values);
+
+                    Intent intent = new Intent(getActivity(), Graph.class);
+                    intent.putExtra(Constants.X_VALUES, wrapper1);
+                    intent.putExtra(Constants.Y_VALUES, wrapper2);
+                    startActivity(intent);
+                }
+                else
+                {
+                    //Display to the user that there are not data to display
+                    Toast toast = Toast.makeText(getActivity(), "No Data to Display", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+            }
+        });
+
+        btn_More2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ArrayList<PowerRecord> records = smartOutletManager.getRecordsInRange(
+                        DateManager.getTodayMidnightSeconds(),DateManager.getNowSeconds());
+
+
+                if(records.size() > 0) {
+                    ArrayList<String> Y_Values = new ArrayList<>();
+                    ArrayList<String> X_Values = new ArrayList<>();
+
+                    for(int i = 0; i<records.size(); i++) {
+                        Y_Values.add(records.get(i).getPower2()+"");
+                        X_Values.add(records.get(i).getRecordTime().getMilitaryTime());
+                    }
+
+                    DataWrapper wrapper1 = new DataWrapper(X_Values);
+                    DataWrapper wrapper2 = new DataWrapper(Y_Values);
+
+                    Intent intent = new Intent(getActivity(), Graph.class);
+                    intent.putExtra(Constants.X_VALUES, wrapper1);
+                    intent.putExtra(Constants.Y_VALUES, wrapper2);
+                    startActivity(intent);
+                }
+                else
+                {
+                    //Display to the user that there are not data to display
+                    Toast toast = Toast.makeText(getActivity(), "No Data to Display", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+            }
+        });
+
+        btn_More3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ArrayList<PowerRecord> records = smartOutletManager.getRecordsInRange(
+                        DateManager.getTodayMidnightSeconds(),DateManager.getNowSeconds());
+
+
+                if(records.size() > 0) {
+                    ArrayList<String> Y_Values = new ArrayList<>();
+                    ArrayList<String> X_Values = new ArrayList<>();
+
+                    for(int i = 0; i<records.size(); i++) {
+                        Y_Values.add(records.get(i).getPower3()+"");
+                        X_Values.add(records.get(i).getRecordTime().getMilitaryTime());
+                    }
+
+                    DataWrapper wrapper1 = new DataWrapper(X_Values);
+                    DataWrapper wrapper2 = new DataWrapper(Y_Values);
+
+                    Intent intent = new Intent(getActivity(), Graph.class);
+                    intent.putExtra(Constants.X_VALUES, wrapper1);
+                    intent.putExtra(Constants.Y_VALUES, wrapper2);
+                    startActivity(intent);
+                }
+                else
+                {
+                    //Display to the user that there are not data to display
+                    Toast toast = Toast.makeText(getActivity(), "No Data to Display", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+            }
+        });
+        btn_More4.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ArrayList<PowerRecord> records = smartOutletManager.getRecordsInRange(
+                        DateManager.getTodayMidnightSeconds(),DateManager.getNowSeconds());
+
+
+                if(records.size() > 0) {
+                    ArrayList<String> Y_Values = new ArrayList<>();
+                    ArrayList<String> X_Values = new ArrayList<>();
+
+                    for(int i = 0; i<records.size(); i++) {
+                        Y_Values.add(records.get(i).getPower4()+"");
+                        X_Values.add(records.get(i).getRecordTime().getMilitaryTime());
+                    }
+
                     DataWrapper wrapper1 = new DataWrapper(X_Values);
                     DataWrapper wrapper2 = new DataWrapper(Y_Values);
 
@@ -227,6 +331,7 @@ public class DisplayPowerFragment extends Fragment {
 
         if(smartOutletManager.getActiveSmartOutlet() != null) {
             updateSmartOutletTitle(smartOutletManager.getActiveSmartOutlet().getNickname());
+            updateCost();
         }
         else{
             updateSmartOutletTitle("--");
@@ -239,15 +344,12 @@ public class DisplayPowerFragment extends Fragment {
      * @param record
      */
     public void updatePowerRecords(PowerRecord record){
-        tv_power1.setText(record.getPower1()+"");
-        tv_power2.setText(record.getPower2()+"");
-        tv_power3.setText(record.getPower3()+"");
-        tv_power4.setText(record.getPower4()+"");
-
         tv_power1.setText(String.format("%.2f",record.getPower1())  +" w" );
         tv_power2.setText(String.format("%.2f",record.getPower2())  +" w" );
         tv_power3.setText(String.format("%.2f",record.getPower3())  +" w" );
         tv_power4.setText(String.format("%.2f",record.getPower4())  +" w" );
+
+        updateCost();
     }
 
     /**
@@ -262,29 +364,19 @@ public class DisplayPowerFragment extends Fragment {
         tglbtn_OffOn4.setChecked(record.getStatus4());
     }
 
-    public void setEnabled(boolean isClickable){
-        //Toggle buttons
-        tglbtn_OffOn1.setEnabled(isClickable);
-        tglbtn_OffOn2 .setEnabled(isClickable);
-        tglbtn_OffOn3.setEnabled(isClickable);
-        tglbtn_OffOn4.setEnabled(isClickable);
-
-
-        //Learn more buttons
-        btn_More1.setEnabled(isClickable);
-        btn_More2.setEnabled(isClickable);
-        btn_More3.setEnabled(isClickable);
-        btn_More4.setEnabled(isClickable);
-
-
-        //Text INSTANCES
-        tv_power1.setEnabled(isClickable);
-        tv_power2.setEnabled(isClickable);
-        tv_power3.setEnabled(isClickable);
-        tv_power4.setEnabled(isClickable);
-    }
-
+    /**
+     * This is used to update the smart outlet title.
+     * @param smartOutletName
+     */
     public void updateSmartOutletTitle(String smartOutletName){
         showActiveTV.setText(smartOutletName);
+    }
+
+    /**
+     * This updates the cost.
+     */
+    public void updateCost(){
+        tv_cost.setText(String.format("Average Cost Today: \n" +
+                 "%.2f $",smartOutletManager.getAverageCostToday()));
     }
 }

@@ -9,9 +9,14 @@ import android.widget.Toast;
 import com.outsmart.outsmartpower.Support.BootlLoader;
 import com.outsmart.outsmartpower.Support.Constants;
 import com.outsmart.outsmartpower.Support.ParentActivity;
+import com.outsmart.outsmartpower.managers.SmartOutletManager;
 import com.outsmart.outsmartpower.records.CredentialBaseRecord;
+import com.outsmart.outsmartpower.records.PowerRecord;
 import com.outsmart.outsmartpower.records.RecordInterface;
+import com.outsmart.outsmartpower.records.StatusRecord;
 import com.outsmart.outsmartpower.ui.UIManager;
+
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -30,11 +35,12 @@ import java.util.TimerTask;
  *
  * Name: UDPManager Class
  *
- * Description: This class is a singleton UDP server that keeps listening for packets and update
- * the smartoutletmanager.
+ * Description: This class is responsible of receiving from and sending packets to the smart outlet.
+ * When the packets is received it is handled according to its types as it is described in the
+ * function that handles received packets.
  *
  * This class' receiveUDPPacket and sendUDPPacket classes will take three parameters since they
- * extend an ansynchronous task. They are described below:
+ * extend an asynchronous task. They are described below:
  *
  * Params: the type of the parameters sent to the task upon execution.
  * Progress: the type of the progress units published during the background computation.
@@ -71,8 +77,18 @@ public class UDPManager extends Observable implements Observer{
      */
     Timer timer;
 
+    /**
+     * This variable is set to true if the timer is running.
+     */
+    boolean isTimeRunning;
+    /**
+     * This holds a reference to the smartOutletManager class
+     */
+    SmartOutletManager smartOutletManager;
 
-    //Private class that receives packets
+    /**
+     *    Private class that receives packets
+     */
     private class receiveUDPPacket extends AsyncTask<Object, Object, Object> {
 
         @Override
@@ -87,20 +103,29 @@ public class UDPManager extends Observable implements Observer{
                 }
 
             } catch (Exception e) {
-                Toast.makeText(ParentActivity.getParentActivity(), "Server interrupted!",
-                        Toast.LENGTH_SHORT).show();
+                ParentActivity.getParentActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(ParentActivity.getParentActivity(), "Server interrupted!",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+
             } finally {
                 stopServer();
             }
             return null;
         }
 
+        /**
+         * This always called when the publishProgress is called in the doInBackground above.
+         * @param values
+         */
         @Override
         protected void onProgressUpdate(Object... values) {
             if (values[0] != null){
                 String updatePacket = values[0].toString();
-                setChanged();
-                notifyObservers(updatePacket);
+                processPackets(updatePacket);
             };
         }
 
@@ -115,10 +140,12 @@ public class UDPManager extends Observable implements Observer{
         @Override
         protected Void doInBackground(PacketInformation... arg0) {
             PacketInformation pktInfo = arg0[0];
-            try {
-                pktInfo.getSocket().send(pktInfo.getPacket());
-            } catch (IOException e) {
-                e.printStackTrace();
+            if(pktInfo != null) {
+                try {
+                    pktInfo.getSocket().send(pktInfo.getPacket());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             return null;
         }
@@ -126,7 +153,9 @@ public class UDPManager extends Observable implements Observer{
 
     //private constructor (singleton)
     private UDPManager() {
+        timer = new Timer();
         numberOfPacketsSent = 0;
+        isTimeRunning = false;
     }
 
     @Override
@@ -134,7 +163,9 @@ public class UDPManager extends Observable implements Observer{
         //Once booted, initialize
         if(o.getClass().equals(BootlLoader.class)){
             startServer();
-            addObserver(UDPServer.getOurInstance());
+
+            smartOutletManager = SmartOutletManager.getInstance();
+
         }
     }
 
@@ -170,7 +201,7 @@ public class UDPManager extends Observable implements Observer{
         sendSocket.close();
     }
 
-    private void startServer() {
+    public void startServer() {
         serverRunning = true;
         openSockets();
         new receiveUDPPacket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, receiveSocket);
@@ -193,15 +224,21 @@ public class UDPManager extends Observable implements Observer{
             new sendUDPPacket().execute(new PacketInformation(sendSocket,sendPacket));
         }
         catch(Exception e){
-            e.printStackTrace();//TODO implement exception
+            e.printStackTrace();
         }
     }
 
+    /**
+     * When this function is used to send a packet, the packet is constantly send every 2 seconds
+     * until 10 tries and then it gives up until the user retries.
+     * @param packetToSend
+     * @param ipAddress
+     */
     public void startTimerSendingSetupPackets(final  RecordInterface packetToSend, final String ipAddress) {
         timer = new Timer();
-        timer.schedule(new sendSetupPackets(packetToSend,ipAddress),0,1000);
+        timer.schedule(new sendSetupPackets(packetToSend,ipAddress),0,2000);
+        isTimeRunning = true;
     }
-
 
     /**
      * This is run when a credential record or echo request record is to be sent during setup.
@@ -209,7 +246,7 @@ public class UDPManager extends Observable implements Observer{
      * If we receive a credential packet, we will stop a timer. If the timer runs out, we will
      * notify the user that the setup was a failure.
      */
-    class sendSetupPackets extends TimerTask {
+    private class sendSetupPackets extends TimerTask {
         RecordInterface packetToSend;
         String ipAddress;
         public sendSetupPackets(RecordInterface packetToSend, String ipAddress){
@@ -220,20 +257,98 @@ public class UDPManager extends Observable implements Observer{
         public void run() {
             sendPacket(packetToSend,ipAddress);
             numberOfPacketsSent++;
-            if(numberOfPacketsSent == 60){
-                stopTimer();
+            if(numberOfPacketsSent >=20){
+                setupFailed();  //It also stops the timer.
             }
-            //UIManager.getInstance().disPlayMessage("Sent Setup!");
         }
     }
 
     /**
-     * TODO: This is done solely to be called by the UDPServer if it receives a credential record.
-     * Once we move its functionality to this class, we won't need this function anymore.
+     * Any class that implements this interface will give the implementation of the function.
+     * When called the id and the ip is passed. Currently, the mainActivity is calling it because
+     * it is the one responsible of creating a new smart outlet.
+     */
+    public interface reportOutsmartCred{
+        void onOutsmartCredReceived(String id, String ip);
+    }
+
+    /**
+     * This function is knows what kind of a packet that was received from the remote smart outlet.
+     * If it is the setup packet (that contains remote credentials), it notifies the
+     * SmartOutletManager class. The smartoutletManager class returns whether the packet was valid
+     * or not. If it was, the timer is stopped. If it was not valid, the setup packets continues to
+     * be sent.
+     * @param dataReceived
+     */
+    private void processPackets(String dataReceived){
+
+            JSONObject json;
+            try {
+                json = new JSONObject(dataReceived);
+            }
+            catch (Exception e){
+                e.printStackTrace();
+                return;
+            }
+
+            try {
+                String type = json.getString(Constants.TYPE_LABEL);
+
+                switch (type){
+                    case Constants.CRED_RECORD:
+                        String ipAdd = json.getString(Constants.IP_CONTENT);
+                        if(!ipAdd.equals("0.0.0.0")){
+                            String id = (json.getString(Constants.ID_CONTENT));
+                            reportOutsmartCred reportOutsmartCred = (reportOutsmartCred) ParentActivity.
+                                    getInstance().getParentActivity();
+                            if (reportOutsmartCred != null) {
+                                reportOutsmartCred.onOutsmartCredReceived(id, ipAdd);
+                            }
+                            stopTimer();
+                        }
+                        break;
+                    case Constants.REPL_RECORD:
+                        smartOutletManager.setSmart_OutletConnected(true);
+                        stopTimer();
+                        UIManager.getInstance().disPlayMessage("smart-outlet connected!");
+                        break;
+                    case Constants.CONT_RECORD:
+                        smartOutletManager.receiveStatusRecord(new StatusRecord(dataReceived));
+                        break;
+                    case Constants.PORE_RECORD:
+                        PowerRecord record = new PowerRecord(dataReceived);
+                        if(record!=null)
+                            smartOutletManager.receivePowerRecord(record);
+                        break;
+                    default:
+                        return;
+                }
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+    }
+
+    /**
+     * When called, the timer is canceled and the number of packets is set back to zero.
      * @return
      */
     public void stopTimer(){
         timer.cancel();
+        isTimeRunning = false;
         numberOfPacketsSent = 0;
+    }
+
+    /**
+     * It runs on UI thread that the setup has failed. When the setup fails,
+     */
+    public void setupFailed(){
+        stopTimer();
+        ParentActivity.getParentActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                UIManager.getInstance().disPlayMessage("Connection failed!\nPlease try again");
+            }
+        });
     }
 }
