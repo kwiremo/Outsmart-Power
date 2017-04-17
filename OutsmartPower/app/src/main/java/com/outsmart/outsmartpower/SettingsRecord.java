@@ -5,7 +5,7 @@ package com.outsmart.outsmartpower;
  *
  * Name: Settings BaseRecord
  *
- * Description: TODO describe this class
+ * Description: The setting record has the date format, time format, unit preference,and the cost.
  */
 
 public class SettingsRecord {

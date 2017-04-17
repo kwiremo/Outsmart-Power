@@ -19,6 +19,9 @@ import java.util.List;
  * Edited by Rene Moise Kwibuka on 1/18/2017/
  */
 
+/**
+ * This class stores all data in the local database. Classes use it to retrieve all stored data.
+ */
 public class DatabaseOperations extends SQLiteOpenHelper {
     private static DatabaseOperations ourInstance = new DatabaseOperations(
             ParentActivity.getParentActivity());

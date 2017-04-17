@@ -52,15 +52,15 @@ double current1 = 0, current2 = 0, current3 = 0, current4 = 0;
 void setup() {
 	// Open serial communications
 	Serial.begin(9600);
-  Serial.setTimeout(900);
-  mySerial.begin(9600);
+	Serial.setTimeout(900);
+	mySerial.begin(9600);
 
-  //SPIFFS setup
-  SPIFFS.begin();
-  // Next lines have to be done ONLY ONCE!!!!!When SPIFFS is formatted ONCE you can comment these lines out!!
-  //Serial.println("Please wait 30 secs for SPIFFS to be formatted");
-  //SPIFFS.format();
-  //Serial.println("Spiffs formatted");
+	//SPIFFS setup
+	SPIFFS.begin();
+	// Next lines have to be done ONLY ONCE!!!!!When SPIFFS is formatted ONCE you can comment these lines out!!
+	//Serial.println("Please wait 30 secs for SPIFFS to be formatted");
+	//SPIFFS.format();
+	//Serial.println("Spiffs formatted");
 
 	setUpPins();
 
@@ -233,32 +233,6 @@ void loop() {
 	}
 	
 	if (connectedToPhoneApp){
-		////sendPowerRecords();
-		////Reserve memory space
-		//StaticJsonBuffer<300> jsonBufferSend;
-
-		////status1 = 1;
-		////Build object tree in memory
-		//JsonObject& root = jsonBufferSend.createObject();
-		//root["type"] = "PORE";
-		//root["t"] = String(1491685038);
-		//root["v"] = String(120);
-
-		//root["c1"] = String(current1); root["c2"] = String(current1);
-		//root["c3"] = String(current1); root["c4"] = String(current1);
-		//root["s1"] = String(status1); root["s2"] = String(status2);
-		//root["s3"] = String(status3); root["s4"] = String(status4);
-		//root["id"] = macID;
-		//char messageToSend[200];
-		//root.printTo(messageToSend, sizeof(messageToSend));
-		//String toSendData = messageToSend;
-		////Serial.println(toSendData);
-		//current1 = current1 + .01;
-		//current2 = current1 + .01;
-		//current3 = current1 + .01;
-		//current4 = current1 + .01;
-		////send UDP Packet
-		//sendUDPPacket(toSendData, remoteIP, remoteIPPort);
 		sendPowerRecords();
 		sendStatusUpdate();
 	}

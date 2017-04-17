@@ -231,10 +231,15 @@ public class UDPManager extends Observable implements Observer{
     /**
      * When this function is used to send a packet, the packet is constantly send every 2 seconds
      * until 10 tries and then it gives up until the user retries.
+     * Note that when you cancel a timer, its thread is terminated and you can not use
+     * schedule to to rerun it. A new instance has to be created to schedule a new timer.
      * @param packetToSend
      * @param ipAddress
      */
     public void startTimerSendingSetupPackets(final  RecordInterface packetToSend, final String ipAddress) {
+        //timer = new Timer();
+        if(isTimeRunning)
+            stopTimer();
         timer = new Timer();
         timer.schedule(new sendSetupPackets(packetToSend,ipAddress),0,2000);
         isTimeRunning = true;
