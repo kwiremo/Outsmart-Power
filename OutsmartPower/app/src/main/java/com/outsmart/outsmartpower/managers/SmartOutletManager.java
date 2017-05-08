@@ -111,7 +111,12 @@ public class SmartOutletManager extends Observable implements Observer,
     }
 
     private void updateUITitle(String nickname) {
+        for(int i = 0; i < ParentActivity.getParentActivity().
+                getFragmentManager().getBackStackEntryCount(); ++i) {
+            ParentActivity.getParentActivity().getFragmentManager().popBackStack();
+        }
         try {
+
             DisplayPowerFragment displayPowerFragment = (DisplayPowerFragment) mainActivity.
                     getFragmentManager().findFragmentById(R.id.wifiListFragmentContainer);
 

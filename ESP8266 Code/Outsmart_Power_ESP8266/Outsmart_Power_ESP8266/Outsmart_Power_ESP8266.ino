@@ -23,6 +23,7 @@ bool connectedToHomeWifi = false;
 bool connectedToPhoneApp = false;
 String macID = ""; //This is used as the OutSmart ID.
 
+
 // CONTROLLING PINS
 int outlet1 = D1, outlet2 = D2, outlet3 = D5, outlet4 = D6;
 
@@ -233,6 +234,7 @@ void loop() {
 	}
 	
 	if (connectedToPhoneApp){
+		mySerial.println("Displaying power");
 		sendPowerRecords();
 		sendStatusUpdate();
 	}
@@ -240,9 +242,9 @@ void loop() {
   //Get the power measurment data and store it
   //retrieveAndStorePowerInfo("f.txt");
   
-	Serial.print("IP for remote host: ");
-	Serial.println(remoteIP);
-	Serial.println(WiFi.localIP().toString());
+	mySerial.print("IP for remote host: ");
+	mySerial.println(remoteIP);
+	mySerial.println(WiFi.localIP().toString());
 
 	if (connectedToHomeWifi){
 		epoch++;

@@ -56,6 +56,7 @@ public class GetClickedItemListFragment extends ListFragment {
         adapter = new ArrayAdapter<>(getActivity(),
                 android.R.layout.simple_list_item_1,outsmartManager.getSmartOutletList());
 
+        getListView().setLongClickable(true);
         getListView().setOnItemLongClickListener(removeSmartOutlet);
         setListAdapter(adapter);
     }
@@ -76,7 +77,7 @@ public class GetClickedItemListFragment extends ListFragment {
         OnReceivedClickedListItem receivedPosition = SmartOutletManager.getInstance();
         if(receivedPosition != null){
             SmartOutletManager.getInstance().receiveClickedItem(position);
-            getFragmentManager().popBackStack();
+           // getFragmentManager().popBackStack();
         }
     }
 
@@ -86,8 +87,10 @@ public class GetClickedItemListFragment extends ListFragment {
             SmartOutlet smartOutlet = outsmartManager.getSmartOutletList().get(i);
             if(smartOutlet != null){
                 outsmartManager.removeOutlet(smartOutlet.getNickname());
+                adapter.notifyDataSetChanged();
+                getFragmentManager().popBackStack();
             }
-            return false;
+            return true;
         }
     };
 }
